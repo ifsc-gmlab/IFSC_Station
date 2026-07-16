@@ -57,6 +57,17 @@
 
 ## 2. 快速开始
 
+### 2.0 前置准备
+
+**首次部署**请先按 [IFSC_Station_安装与运行手册](IFSC_Station_安装与运行手册.md) 完成：
+
+1. 用户加入 `dialout` 组（**必须重新登录**）
+2. 移除 `modemmanager`（避免串口冲突）
+3. 安装 FUSE 2 + Qt 5 运行时 + GStreamer + 图形库
+4. AppImage 赋予执行权限
+
+> 上游 QGC AppImage **不是**双击即用——必须先补齐系统依赖。本手册第 9 节 FAQ 列出常见错误。
+
 ### 2.1 安装与首次启动
 
 1. **下载** `IFSC-Station.AppImage`
@@ -73,6 +84,8 @@
 > **首次启动会做两件事**：
 > 1. 在 `~/.icons/IFSC-Station.png` 写入图标（任务栏/启动器需要）
 > 2. 在 `~/.config/QGroundControl.org/IFSC Station.ini` 写入用户偏好
+
+> 💡 想让 AppImage 像普通应用一样出现在 GNOME Activities / KDE 启动器中，参考 [IFSC_Station_安装与运行手册](IFSC_Station_安装与运行手册.md) 第 5 节"桌面集成"。
 
 ### 2.2 连接飞控
 

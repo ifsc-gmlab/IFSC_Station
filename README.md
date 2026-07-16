@@ -7,12 +7,25 @@
 
 ## 快速开始
 
+**1. 安装系统依赖**（首次部署需要）：
+
+```bash
+sudo apt update && sudo apt install -y libfuse2 libqt5gui5 \
+    gstreamer1.0-plugins-bad gstreamer1.0-libav
+sudo usermod -a -G dialout $USER    # 然后**重新登录**
+sudo apt remove -y modemmanager
+```
+
+详细依赖列表（Qt5 完整模块、图形库、type 2 AppImage 原理等）见 [IFSC_Station_安装与运行手册](IFSC_Station_安装与运行手册.md)。
+
+**2. 运行**：
+
 ```bash
 chmod +x IFSC-Station.AppImage
 ./IFSC-Station.AppImage
 ```
 
-详细步骤见 [IFSC_Station_使用手册](IFSC_Station_使用手册.md)。
+详细使用步骤见 [IFSC_Station_使用手册](IFSC_Station_使用手册.md)。
 
 ---
 
@@ -20,6 +33,7 @@ chmod +x IFSC-Station.AppImage
 
 | 文档 | 适用对象 | 内容 |
 |---|---|---|
+| **[IFSC_Station_安装与运行手册](IFSC_Station_安装与运行手册.md)** | 部署工程师 / 运维 | 在干净 Ubuntu 20.04+ 上一次性补齐系统依赖、FUSE/Qt/GStreamer 完整列表、桌面集成（GNOME/KDE 应用菜单）、type 2 AppImage 原理、卸载 |
 | **[IFSC_Station_定制与打包手册](IFSC_Station_定制与打包手册.md)** | 二开工程师 / 打包工程师 | 13 个定制点的源码位置、复现过程中遇到的 8 个问题与解决办法、AppImage 打包脚本差异对照表 |
 | **[IFSC_Station_测试手册](IFSC_Station_测试手册.md)** | 测试工程师 / QA | 12 项冒烟测试矩阵、视觉与功能测试清单、跨机器兼容性测试、回归测试脚本 |
 | **[IFSC_Station_使用手册](IFSC_Station_使用手册.md)** | 操作员 / 用户 | 快速开始、界面总览、飞控连接、任务规划、遥测日志、FAQ、故障排除 |
