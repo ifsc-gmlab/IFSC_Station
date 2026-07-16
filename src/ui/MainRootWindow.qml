@@ -416,19 +416,23 @@ ApplicationWindow {
 
                         QGCLabel {
                             id:                     versionLabel
-                            text:                   qsTr("%1 Version").arg(QGroundControl.appName)
+                            text:                   qsTr("IFSC Station")
                             font.pointSize:         ScreenTools.smallFontPointSize
                             wrapMode:               QGCLabel.WordWrap
                             Layout.maximumWidth:    parent.width
+                            Layout.fillWidth:       true
                             Layout.alignment:       Qt.AlignHCenter
+                            horizontalAlignment:    Text.AlignHCenter
                         }
 
                         QGCLabel {
-                            text:                   QGroundControl.qgcVersion
+                            text:                   "V1.0"
                             font.pointSize:         ScreenTools.smallFontPointSize
                             wrapMode:               QGCLabel.WrapAnywhere
                             Layout.maximumWidth:    parent.width
+                            Layout.fillWidth:       true
                             Layout.alignment:       Qt.AlignHCenter
+                            horizontalAlignment:    Text.AlignHCenter
 
                             QGCMouseArea {
                                 id:                 easterEggMouseArea

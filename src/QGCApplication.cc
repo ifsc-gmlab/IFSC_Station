@@ -264,9 +264,9 @@ QGCApplication::QGCApplication(int &argc, char* argv[], bool unitTesting)
 #ifdef DAILY_BUILD
         // This gives daily builds their own separate settings space. Allowing you to use daily and stable builds
         // side by side without daily screwing up your stable settings.
-        applicationName = QStringLiteral("%1 Daily").arg(QGC_APPLICATION_NAME);
+        applicationName = QStringLiteral("IFSC Station");
 #else
-        applicationName = QGC_APPLICATION_NAME;
+        applicationName = QStringLiteral("IFSC Station");
 #endif
     }
     setApplicationName(applicationName);
@@ -839,6 +839,7 @@ void QGCApplication::_qgcCurrentStableVersionDownloadComplete(QString /*remoteFi
     Q_UNUSED(localFile)
     Q_UNUSED(errorMsg)
 #else
+    if (false) {
     if (errorMsg.isEmpty()) {
         QFile versionFile(localFile);
         if (versionFile.open(QIODevice::ReadOnly)) {
@@ -861,6 +862,7 @@ void QGCApplication::_qgcCurrentStableVersionDownloadComplete(QString /*remoteFi
     }
 
     sender()->deleteLater();
+    }
 #endif
 }
 

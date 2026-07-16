@@ -1116,12 +1116,16 @@ Rectangle {
 
                     Item { width: 1; height: _margins }
                     QGCLabel {
-                        text:               qsTr("%1 Version").arg(QGroundControl.appName)
+                        text:               qsTr("IFSC Station")
+                        Layout.fillWidth:   true
                         Layout.alignment:   Qt.AlignHCenter
+                        horizontalAlignment: Text.AlignHCenter
                     }
                     QGCLabel {
-                        text:               QGroundControl.qgcVersion
+                        text:               "V1.0"
+                        Layout.fillWidth:   true
                         Layout.alignment:   Qt.AlignHCenter
+                        horizontalAlignment: Text.AlignHCenter
                     }
                 } // settingsColumn
             }

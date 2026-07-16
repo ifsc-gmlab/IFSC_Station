@@ -54,6 +54,10 @@
         <file alias="XDelete.svg">resources/XDelete.svg</file>
         <file alias="XDeleteBlack.svg">resources/XDeleteBlack.svg</file>
         <file alias="waypoint.svg">resources/waypoint.svg</file>
+        <file alias="LOGO.png">resources/LOGO.png</file>
+        <file alias="IFSC_logo.png">resources/IFSC_logo.png</file>
+        <file alias="IFSC-Station.png">resources/icons/IFSC-Station.png</file>
+        <file alias="IFSC-Station.ico">resources/icons/IFSC-Station.ico</file>
         <file>resources/icons/qgroundcontrol.ico</file>
     </qresource>
     <qresource prefix="/res/firmware">

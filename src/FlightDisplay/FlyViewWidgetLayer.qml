@@ -97,6 +97,34 @@ Item {
         }
     }
 
+    // IFSC Station: 永久显示两个 LOGO（与仪表盘等高、对齐右侧）
+    Row {
+        id:                 _ifscLogos
+        anchors.top:        instrumentPanel.visible ? instrumentPanel.top : parent.top
+        anchors.right:      instrumentPanel.visible ? instrumentPanel.left : parent.right
+        anchors.topMargin:  instrumentPanel.visible ? 0 : _toolsMargin
+        anchors.rightMargin: _toolsMargin
+        spacing:            ScreenTools.defaultFontPixelWidth
+        z:                  QGroundControl.zOrderTopMost
+        height:             instrumentPanel.visible ? instrumentPanel.height : ScreenTools.defaultFontPixelHeight * 6
+
+        Image {
+            id:             ifscLogoImage
+            source:         "qrc:/res/IFSC_logo.png"
+            fillMode:       Image.PreserveAspectFit
+            smooth:         true
+            height:         parent.height
+        }
+
+        Image {
+            id:             logoImage
+            source:         "qrc:/res/LOGO.png"
+            fillMode:       Image.PreserveAspectFit
+            smooth:         true
+            height:         parent.height
+        }
+    }
+
     MultiVehicleList {
         anchors.margins:    _toolsMargin
         anchors.top:        multiVehiclePanelSelector.bottom

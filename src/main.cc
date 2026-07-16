@@ -374,7 +374,8 @@ int main(int argc, char *argv[])
     }
 
 #ifdef Q_OS_LINUX
-    QApplication::setWindowIcon(QIcon(":/res/resources/icons/qgroundcontrol.ico"));
+    // IFSC Station: 与官方 QGC 完全一致 — 单纯 setWindowIcon，让 Qt 自己处理 _NET_WM_ICON
+    QApplication::setWindowIcon(QIcon(":/res/resources/icons/IFSC-Station.ico"));
 #endif /* Q_OS_LINUX */
 
     // There appears to be a threading issue in qRegisterMetaType which can cause it to throw a qWarning
