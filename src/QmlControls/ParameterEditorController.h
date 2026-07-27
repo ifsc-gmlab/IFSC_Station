@@ -11,6 +11,8 @@
 
 #include <QObject>
 #include <QList>
+#include <QPointer>
+#include <QSet>
 
 #include "AutoPilotPlugin.h"
 #include "UASInterface.h"
@@ -138,6 +140,10 @@ private slots:
 private:
     bool _shouldShow(Fact *fact) const;
 
+    // IFSC Station: 当 PX4 上报 IFSC_DIST_SW 参数时建立监听，切换时打印 px4_info(...) 占位接口
+    void    _onIFSCDistSwitchFactAdded (int compId, Fact* fact);
+    static QString _ifscDistSwitchParamName(void) { return QStringLiteral("IFSC_DIST_SW"); }
+
 private:
     ParameterManager*           _parameterMgr           = nullptr;
     QString                     _searchText;
@@ -152,4 +158,7 @@ private:
     QmlObjectListModel          _searchParameters;
     QmlObjectListModel*         _parameters             = nullptr;
     QMap<QString, ParameterEditorCategory*> _mapCategoryName2Category;
+
+    // IFSC Station: 记录已经绑定 rawValueChanged 的 Fact 指针（实例成员，避免跨实例状态污染）
+    QSet<Fact*>                 _ifscBoundFacts;
 };

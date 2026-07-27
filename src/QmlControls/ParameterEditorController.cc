@@ -14,6 +14,8 @@
 #include "AppSettings.h"
 
 #include <QStandardPaths>
+#include <QSet>
+#include <QDebug>
 
 ParameterEditorController::ParameterEditorController(void)
     : _parameterMgr(_vehicle->parameterManager())
@@ -26,6 +28,15 @@ ParameterEditorController::ParameterEditorController(void)
     connect(this, &ParameterEditorController::showModifiedOnlyChanged,  this, &ParameterEditorController::_searchTextChanged);
 
     connect(_parameterMgr, &ParameterManager::factAdded, this, &ParameterEditorController::_factAdded);
+    connect(_parameterMgr, &ParameterManager::factAdded, this, &ParameterEditorController::_onIFSCDistSwitchFactAdded);
+
+    // IFSC Station: 处理飞控在 _buildLists 之前就已经上报的 IFSC_DIST_SW 参数（避免被 buildLists 跳过 factAdded 信号）
+    for (int compId : _parameterMgr->componentIds()) {
+        if (_parameterMgr->parameterExists(compId, _ifscDistSwitchParamName())) {
+            Fact* fact = _parameterMgr->getParameter(compId, _ifscDistSwitchParamName());
+            _onIFSCDistSwitchFactAdded(compId, fact);
+        }
+    }
 
     ParameterEditorCategory* category = _categories.count() ? _categories.value<ParameterEditorCategory*>(0) : nullptr;
     setCurrentCategory(category);
@@ -354,6 +365,73 @@ void ParameterEditorController::resetAllToVehicleConfiguration(void)
 {
     _parameterMgr->resetAllToVehicleConfiguration();
     refresh();
+}
+
+// IFSC Station: 当飞控上报 IFSC_DIST_SW 参数时建立监听
+// 参数走 PX4 MAVLink 通道，元数据由 PX4ParameterFactMetaData.xml 提供 (category="IFSC Station")
+// _factAdded 已自动把它放到正确的 category/group；这里只负责响应值变化
+void ParameterEditorController::_onIFSCDistSwitchFactAdded(int compId, Fact* fact)
+{
+    Q_UNUSED(compId);
+    if (!fact || fact->name() != _ifscDistSwitchParamName()) {
+        return;
+    }
+
+    // 只绑定一次：避免给同一个 Fact 重复 connect rawValueChanged
+    // 用实例成员而不是 static：QML 重新创建 ParameterEditorController 实例时
+    // 需要重新绑定（否则第二次打开 Vehicle Setup 时切换参数不会触发 lambda）
+    if (_ifscBoundFacts.contains(fact)) {
+        return;
+    }
+    _ifscBoundFacts.insert(fact);
+
+    // 把当前值先打印一次（飞控上报初始值）
+    {
+        const uint32_t v = fact->rawValue().toUInt();
+        if (v == 1U) {
+            if (_vehicle) {
+                const double lat     = _vehicle->latitude();
+                const double lon     = _vehicle->longitude();
+                const double altRel  = _vehicle->altitudeRelative()->rawValue().toDouble();
+                qDebug().noquote() << QStringLiteral(
+                    "[IFSC] Param Control mode=1 (initial) | vehicle position: lat=%1 deg, lon=%2 deg, alt(relative)=%3 m")
+                    .arg(lat, 0, 'f', 7)
+                    .arg(lon, 0, 'f', 7)
+                    .arg(altRel, 0, 'f', 2);
+            } else {
+                qDebug() << "[IFSC] Param Control mode=1 (initial) | (no vehicle)";
+            }
+        } else {
+            qDebug() << "[IFSC] PID Control mode=0 (initial)";
+        }
+    }
+
+    // 监听后续值变化
+    // TODO: 真实模块加入后，替换为下发到飞控触发 IFSC 参数控制模式（param_control 模块加载/启动）即可
+    connect(fact, &Fact::rawValueChanged, this, [this, fact](QVariant value) {
+        const uint32_t v = value.toUInt();
+        if (v == 1U) {
+            // IFSC Station: 切换到参数控制 (Param Control) 模式 —— 打印当前飞机位置
+            // TODO: 真实模块加入后，把这里的打印替换为对应模块的调用
+            if (_vehicle) {
+                const double lat     = _vehicle->latitude();
+                const double lon     = _vehicle->longitude();
+                const double altRel  = _vehicle->altitudeRelative()->rawValue().toDouble();
+                const double altAMSL = _vehicle->altitudeAMSL()->rawValue().toDouble();
+                qDebug().noquote() << QStringLiteral(
+                    "[IFSC] Param Control mode=1 | vehicle position: lat=%1 deg, lon=%2 deg, alt(relative)=%3 m, alt(AMSL)=%4 m")
+                    .arg(lat, 0, 'f', 7)
+                    .arg(lon, 0, 'f', 7)
+                    .arg(altRel, 0, 'f', 2)
+                    .arg(altAMSL, 0, 'f', 2);
+            } else {
+                qDebug() << "[IFSC] Param Control mode=1 | (no vehicle)";
+            }
+        } else {
+            // IFSC Station: 恢复 PID 控制（默认 PX4/PID 控制）
+            qDebug() << "[IFSC] PID Control mode=0";
+        }
+    });
 }
 
 bool ParameterEditorController::_shouldShow(Fact* fact) const

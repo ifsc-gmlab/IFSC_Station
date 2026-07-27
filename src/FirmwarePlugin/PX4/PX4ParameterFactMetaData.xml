@@ -11151,4 +11151,18 @@
       </values>
     </parameter>
   </group>
+  <group name="IFSC Station">
+    <parameter name="IFSC_DIST_SW" default="0" type="INT32">
+      <short_desc>Disturbance Switch</short_desc>
+      <long_desc>Switch between the built-in PID controller and the parameter-based controller for disturbance handling.
+                  0: PID Control (default). The original PID controller is used.
+                  1: Param Control. The parameter-based controller is used.</long_desc>
+      <min>0</min>
+      <max>1</max>
+      <values>
+        <value code="0">PID Control</value>
+        <value code="1">Param Control</value>
+      </values>
+    </parameter>
+  </group>
 </parameters>
