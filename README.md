@@ -1,6 +1,6 @@
 # IFSC-Station
 
-> 基于 QGroundControl 4.2.8 定制，针对 IFSC（International Fire Service College）无人机科研与训练任务的地面控制站。
+> 基于 QGroundControl 4.2.8 定制，针对 IFSC（Intelligent Flight and Safe Control Group）无人机科研与训练任务的地面控制站。
 > 单 binary AppImage 部署，免安装，可双击运行。
 
 ---
