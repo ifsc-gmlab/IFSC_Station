@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  IFSC-Station GCS heading arrow
+  - Preserves the original QGCLogoArrow concave-quadrilateral (arrowhead) shape
+  - Vertices: top (36, 2) -> right-bottom (71, 71) -> middle concave (36, 54) -> left-bottom (1, 71)
+  - Inner Q letter (path6-4, path8, path10, path12-3, rect4) and white wings (path3789/3791) removed
+  - All original purple/dark fills replaced with solid #00427F
+  - viewBox 0 0 72 72 preserved
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 72 72" width="72" height="72">
+  <!-- Arrow body: concave quadrilateral (the "arrowhead" shape) -->
+  <polygon points="36,2 71,71 36,54 1,71" fill="#00427F"/>
+</svg>

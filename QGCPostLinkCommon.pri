@@ -68,7 +68,23 @@ WindowsBuild {
     }
 
     DEPLOY_TARGET = $$shell_quote($$shell_path($$DESTDIR\\$${TARGET}.exe))
-    QMAKE_POST_LINK += $$escape_expand(\\n) $$QT_BIN_DIR\\windeployqt --qmldir=$${SOURCE_DIR}\\src $${DEPLOY_TARGET}
+    # IFSC-Station: windeployqt 显式扫描所有 QML 子目录（默认只扫 --qmldir 一个，会漏掉
+    # src/QmlControls、src/FlightMap、src/FlightDisplay 等子目录里的 QML imports 和自定义模块，
+    # 这是与 Qt Creator release 构建 staging 目录内容差异的根因）
+    QMAKE_POST_LINK += $$escape_expand(\\n) $$QT_BIN_DIR\\windeployqt \
+        --qmldir=$${SOURCE_DIR}\\src \
+        --qmldir=$${SOURCE_DIR}\\src\\QmlControls \
+        --qmldir=$${SOURCE_DIR}\\src\\FlightMap \
+        --qmldir=$${SOURCE_DIR}\\src\\FlightDisplay \
+        --qmldir=$${SOURCE_DIR}\\src\\MissionManager \
+        --qmldir=$${SOURCE_DIR}\\src\\AutoPilotPlugins \
+        --qmldir=$${SOURCE_DIR}\\src\\FirmwarePlugin \
+        --qmldir=$${SOURCE_DIR}\\src\\AnalyzeView \
+        --qmldir=$${SOURCE_DIR}\\src\\PlanView \
+        --qmldir=$${SOURCE_DIR}\\src\\Vehicle \
+        --qmldir=$${SOURCE_DIR}\\src\\VehicleSetup \
+        --qmldir=$${SOURCE_DIR}\\src\\ui \
+        $${DEPLOY_TARGET}
 }
 
 LinuxBuild {

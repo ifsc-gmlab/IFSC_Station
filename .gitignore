@@ -8,10 +8,32 @@ libs/lib/Frameworks/GStreamer.framework
 *.nfs
 CMakeFiles
 tags
-build*/
-obj
+# IFSC-Station: track our own build scripts under build/linux and build/windows,
+# but ignore Qt Creator's build outputs (Desktop_Qt_*, staging, CMake*, obj, ...)
+!/build/linux/
+!/build/linux/**
+!/build/windows/
+!/build/windows/**
+/build/Desktop_*
+/build/staging
+/build/staging/**
+/build/CMakeFiles
+/build/CMakeFiles/**
+/build/CMakeCache.txt
+/build/Makefile
+/build/install
+/build/install/**
+/build/release
+/build/release/**
+/build/debug
+/build/debug/**
+/build/obj
+/build/obj/**
 .DS_Store
 *.log
+*.workbuddy
+.workbuddy/
+qgc-web/
 *~
 *~.skp
 bin/*.exe
@@ -31,6 +53,8 @@ doc/html
 doc/doxy.log
 deploy/mac
 deploy/linux
+# IFSC-Station: ignore backup copies of NSIS install assets
+deploy/windows/.installheader.bmp
 controller_log*
 user_config.pri
 *.app

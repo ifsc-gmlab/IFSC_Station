@@ -85,7 +85,8 @@ void QGCPalette::_buildMap()
 
     // Colors not affecting by theming
     //                                              Disabled    Enabled
-    DECLARE_QGC_NONTHEMED_COLOR(brandingPurple,     "#4A2C6D", "#4A2C6D")
+    // IFSC-Station: brandingPurple 改为深蓝 #00427F，与 mainStatusBGColor 统一
+    DECLARE_QGC_NONTHEMED_COLOR(brandingPurple,     "#00427F", "#00427F")
     DECLARE_QGC_NONTHEMED_COLOR(brandingBlue,       "#48D6FF", "#6045c5")
     DECLARE_QGC_NONTHEMED_COLOR(toolStripFGColor,   "#707070", "#ffffff")
 

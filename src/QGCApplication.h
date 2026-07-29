@@ -194,7 +194,7 @@ private:
     bool compressEvent(QEvent *event, QObject *receiver, QPostEventList *postedEvents) override;
 
     bool                        _runningUnitTests;                                  ///< true: running unit tests, false: normal app
-    static const int            _missingParamsDelayedDisplayTimerTimeout = 1000;    ///< Timeout to wait for next missing fact to come in before display
+    static constexpr int        _missingParamsDelayedDisplayTimerTimeout = 1000;    ///< Timeout to wait for next missing fact to come in before display
     QTimer                      _missingParamsDelayedDisplayTimer;                  ///< Timer use to delay missing fact display
     QList<QPair<int,QString>>   _missingParams;                                     ///< List of missing parameter component id:name
 

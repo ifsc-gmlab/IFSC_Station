@@ -261,13 +261,9 @@ QGCApplication::QGCApplication(int &argc, char* argv[], bool unitTesting)
         // name. Also we want to run unit tests with clean settings every time.
         applicationName = QStringLiteral("%1_unittest").arg(QGC_APPLICATION_NAME);
     } else {
-#ifdef DAILY_BUILD
-        // This gives daily builds their own separate settings space. Allowing you to use daily and stable builds
-        // side by side without daily screwing up your stable settings.
-        applicationName = QStringLiteral("%1 Daily").arg(QGC_APPLICATION_NAME);
-#else
+        // IFSC-Station: 去掉 " Daily" 后缀，保持窗口标题与 INI 文件名一致
+        // (DAILY_BUILD 宏保留用于可能的内部条件编译，但不再污染用户可见的 app name)
         applicationName = QGC_APPLICATION_NAME;
-#endif
     }
     setApplicationName(applicationName);
     setOrganizationName(QGC_ORG_NAME);
@@ -839,25 +835,28 @@ void QGCApplication::_qgcCurrentStableVersionDownloadComplete(QString /*remoteFi
     Q_UNUSED(localFile)
     Q_UNUSED(errorMsg)
 #else
-    if (errorMsg.isEmpty()) {
-        QFile versionFile(localFile);
-        if (versionFile.open(QIODevice::ReadOnly)) {
-            QTextStream textStream(&versionFile);
-            QString version = textStream.readLine();
+    // IFSC-Station: 关闭 New Version Available 弹窗，整块用 if (false) 包裹
+    if (false) {
+        if (errorMsg.isEmpty()) {
+            QFile versionFile(localFile);
+            if (versionFile.open(QIODevice::ReadOnly)) {
+                QTextStream textStream(&versionFile);
+                QString version = textStream.readLine();
 
-            qDebug() << version;
+                qDebug() << version;
 
-            int majorVersion, minorVersion, buildVersion;
-            if (_parseVersionText(version, majorVersion, minorVersion, buildVersion)) {
-                if (_majorVersion < majorVersion ||
-                        (_majorVersion == majorVersion && _minorVersion < minorVersion) ||
-                        (_majorVersion == majorVersion && _minorVersion == minorVersion && _buildVersion < buildVersion)) {
-                    showAppMessage(tr("There is a newer version of %1 available. You can download it from %2.").arg(applicationName()).arg(toolbox()->corePlugin()->stableDownloadLocation()), tr("New Version Available"));
+                int majorVersion, minorVersion, buildVersion;
+                if (_parseVersionText(version, majorVersion, minorVersion, buildVersion)) {
+                    if (_majorVersion < majorVersion ||
+                            (_majorVersion == majorVersion && _minorVersion < minorVersion) ||
+                            (_majorVersion == majorVersion && _minorVersion == minorVersion && _buildVersion < buildVersion)) {
+                        showAppMessage(tr("There is a newer version of %1 available. You can download it from %2.").arg(applicationName()).arg(toolbox()->corePlugin()->stableDownloadLocation()), tr("New Version Available"));
+                    }
                 }
             }
+        } else {
+            qDebug() << "Download QGC stable version failed" << errorMsg;
         }
-    } else {
-        qDebug() << "Download QGC stable version failed" << errorMsg;
     }
 
     sender()->deleteLater();

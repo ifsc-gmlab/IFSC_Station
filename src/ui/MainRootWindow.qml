@@ -161,7 +161,7 @@ ApplicationWindow {
     }
 
     function showSettingsTool() {
-        showTool(qsTr("Application Settings"), "AppSettings.qml", "/res/QGCLogoWhite")
+        showTool(qsTr("Application Settings"), "AppSettings.qml", "/res/IFSC-StationLogoWhite")
     }
 
     //-------------------------------------------------------------------------
@@ -399,7 +399,7 @@ ApplicationWindow {
                         height:             _toolButtonHeight
                         Layout.fillWidth:   true
                         text:               qsTr("Application Settings")
-                        imageResource:      "/res/QGCLogoFull"
+                        imageResource:      "/res/IFSC-StationLogoFull"
                         imageColor:         "transparent"
                         visible:            !QGroundControl.corePlugin.options.combineSettingsAndSetup
                         onClicked: {
@@ -416,19 +416,21 @@ ApplicationWindow {
 
                         QGCLabel {
                             id:                     versionLabel
-                            text:                   qsTr("%1 Version").arg(QGroundControl.appName)
+                            text:                   qsTr("IFSC Station")
                             font.pointSize:         ScreenTools.smallFontPointSize
                             wrapMode:               QGCLabel.WordWrap
-                            Layout.maximumWidth:    parent.width
+                            Layout.fillWidth:       true
                             Layout.alignment:       Qt.AlignHCenter
+                            horizontalAlignment:    Text.AlignHCenter
                         }
 
                         QGCLabel {
-                            text:                   QGroundControl.qgcVersion
+                            text:                   "V1.0"
                             font.pointSize:         ScreenTools.smallFontPointSize
                             wrapMode:               QGCLabel.WrapAnywhere
-                            Layout.maximumWidth:    parent.width
+                            Layout.fillWidth:       true
                             Layout.alignment:       Qt.AlignHCenter
+                            horizontalAlignment:    Text.AlignHCenter
 
                             QGCMouseArea {
                                 id:                 easterEggMouseArea

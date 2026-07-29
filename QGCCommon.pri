@@ -94,7 +94,11 @@ linux {
             /wd4005 \   # silence warnings about macro redefinition, these come from the shapefile code with is external
             /wd4290 \   # ignore exception specifications
             /wd4267 \   # silence conversion from 'size_t' to 'int', possible loss of data, these come from gps drivers shared with px4
-            /wd4100     # unreferenced formal parameter - gst-plugins-good
+            /wd4100 \   # unreferenced formal parameter - gst-plugins-good
+            /wd4264 \   # silence "in-class initializer for static data member is not a constant expression" - some MSVC versions fire this on legitimate static const int = <literal>
+            /wd4819 \   # IFSC-Station: source contains chars outside current code page (936) - main.cc and others have UTF-8 comments
+            /source-charset:utf-8 \   # IFSC-Station: tell MSVC to read source files as UTF-8 (otherwise non-ASCII bytes get misinterpreted under Chinese locale 936)
+            /execution-charset:utf-8   # IFSC-Station: produce UTF-8 string literals so QGC_APPLICATION_NAME = "IFSC-Station" etc. round-trip cleanly
     } else {
         error("Unsupported Windows toolchain, only Visual Studio 2017 64 bit is supported")
     }

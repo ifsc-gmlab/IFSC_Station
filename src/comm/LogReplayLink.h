@@ -133,7 +133,7 @@ private:
     QFile               _logFile;
     quint64             _logFileSize;
 
-    static const int cbTimestamp = sizeof(quint64);
+    static constexpr int cbTimestamp = sizeof(quint64);
 };
 
 class LogReplayLinkController : public QObject

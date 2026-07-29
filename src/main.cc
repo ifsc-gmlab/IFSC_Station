@@ -374,8 +374,12 @@ int main(int argc, char *argv[])
     }
 
 #ifdef Q_OS_LINUX
-    QApplication::setWindowIcon(QIcon(":/res/resources/icons/qgroundcontrol.ico"));
+    QApplication::setWindowIcon(QIcon(":/res/resources/icons/IFSC-Station.ico"));
 #endif /* Q_OS_LINUX */
+#ifdef Q_OS_WIN
+    // IFSC-Station: Windows 下运行时也设置窗口图标（与任务栏 EXE 图标区分，作用于 alt-tab/标题栏小图标）
+    QApplication::setWindowIcon(QIcon(":/res/resources/icons/IFSC-Station.ico"));
+#endif /* Q_OS_WIN */
 
     // There appears to be a threading issue in qRegisterMetaType which can cause it to throw a qWarning
     // about duplicate type converters. This is caused by a race condition in the Qt code. Still working

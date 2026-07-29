@@ -27,7 +27,7 @@ message(Qt version $$[QT_VERSION])
 
 include(QGCCommon.pri)
 
-TARGET   = QGroundControl
+TARGET   = IFSC-Station
 TEMPLATE = app
 QGCROOT  = $$PWD
 
@@ -49,7 +49,8 @@ LinuxBuild {
 }
 
 WindowsBuild {
-    RC_ICONS = resources/icons/qgroundcontrol.ico
+    # IFSC-Station: 任务栏 / alt-tab 嵌入图标（与 resources/icons/IFSC-Station.ico 同步）
+    RC_ICONS = resources/icons/IFSC-Station.ico
     CONFIG += resources_big
 }
 
@@ -57,15 +58,16 @@ WindowsBuild {
 # Branding
 #
 
-QGC_APP_NAME        = "QGroundControl"
-QGC_ORG_NAME        = "QGroundControl.org"
-QGC_ORG_DOMAIN      = "org.qgroundcontrol"
-QGC_APP_DESCRIPTION = "Open source ground control app provided by QGroundControl dev team"
-QGC_APP_COPYRIGHT   = "Copyright (C) 2019 QGroundControl Development Team. All rights reserved."
+QGC_APP_NAME        = "IFSC-Station"
+QGC_ORG_NAME        = "IFSC-Station"
+QGC_ORG_DOMAIN      = "ifsc-station.local"
+QGC_APP_DESCRIPTION = "IFSC Station ground control app for UAV"
+QGC_APP_COPYRIGHT   = "Copyright (C) 2025 IFSC. All rights reserved."
 
 WindowsBuild {
+    # IFSC-Station: NSIS 安装包使用专属图标与页眉
     QGC_INSTALLER_SCRIPT        = "$$SOURCE_DIR\\deploy\\windows\\nullsoft_installer.nsi"
-    QGC_INSTALLER_ICON          = "$$SOURCE_DIR\\deploy\\windows\\WindowsQGC.ico"
+    QGC_INSTALLER_ICON          = "$$SOURCE_DIR\\deploy\\windows\\IFSC-Station.ico"
     QGC_INSTALLER_HEADER_BITMAP = "$$SOURCE_DIR\\deploy\\windows\\installheader.bmp"
     QGC_INSTALLER_DRIVER_MSI    = "$$SOURCE_DIR\\deploy\\windows\\driver.msi"
 }
@@ -354,9 +356,10 @@ CustomBuild {
         RESOURCES += $$PWD/resources/InstrumentValueIcons/InstrumentValueIcons.qrc
     }
 } else {
-    DEFINES += QGC_APPLICATION_NAME=\"\\\"QGroundControl\\\"\"
-    DEFINES += QGC_ORG_NAME=\"\\\"QGroundControl.org\\\"\"
-    DEFINES += QGC_ORG_DOMAIN=\"\\\"org.qgroundcontrol\\\"\"
+    # IFSC-Station: 让 DEFINES 用上面 QGC_APP_NAME / QGC_ORG_NAME / QGC_ORG_DOMAIN 变量
+    DEFINES += QGC_APPLICATION_NAME=\\\"$${QGC_APP_NAME}\\\"
+    DEFINES += QGC_ORG_NAME=\\\"$${QGC_ORG_NAME}\\\"
+    DEFINES += QGC_ORG_DOMAIN=\\\"$${QGC_ORG_DOMAIN}\\\"
     RESOURCES += \
         $$PWD/qgroundcontrol.qrc \
         $$PWD/qgcresources.qrc \
