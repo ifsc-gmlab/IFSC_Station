@@ -1,0 +1,1758 @@
+/* ============================================================
+   QGC Web — 与 QGroundControl 视觉一致
+   Palette 与 QGCPalette.cc (Dark) 完全对齐
+   ============================================================ */
+
+@font-face {
+  font-family: 'Open Sans';
+  src: url('../qrc/resources/fonts/OpenSans-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Open Sans';
+  src: url('../qrc/resources/fonts/OpenSans-Semibold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  /* 完全按 QGCPalette.cc Dark 主题映射 */
+  --window:           #222222;
+  --window-shade:     #2a2a2a;
+  --window-shade-dk:  #1a1a1a;
+  --window-shade-lt:  #626262;
+  --text:             #ffffff;
+  --text-disabled:    #707070;
+  --button:           #626270;
+  --button-text:      #ffffff;
+  --button-hl:        #fff291;
+  --button-hl-text:   #000000;
+  --primary-button:   #8cb3be;
+  --primary-text:     #000000;
+  --map-button:       #000000;
+  --map-button-hl:    #be781c;
+  --map-indicator:    #be781c;
+  --color-green:      #00e04b;
+  --color-orange:     #de8500;
+  --color-red:        #f32836;
+  --color-grey:       #bfbfbf;
+  --color-blue:       #536dff;
+  --branding-purple:  #4A2C6D;
+  --branding-blue:    #6045c5;
+  --branding-ifsc:    #00427F;            /* IFSC 品牌深蓝 */
+  --branding-ifsc-hi: #005aab;            /* IFSC 品牌深蓝 (hover) */
+  --tool-strip-fg:    #ffffff;
+  --toolbar-bg:       #1a1a1a;
+  --alert-bg:         #eecc44;
+
+  --font-ui:    'Open Sans', 'Segoe UI', -apple-system, sans-serif;
+  --font-mono:  ui-monospace, SFMono-Regular, Menlo, monospace;
+  --h1:         18px;
+  --h2:         14px;
+  --h3:         12px;
+  --small:      11px;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body {
+  margin: 0; padding: 0; height: 100%;
+  background: var(--window);
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: var(--h3);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+body { display: flex; flex-direction: column; min-height: 100vh; overflow: hidden; }
+
+/* ============================================================
+   主窗口布局 (与 QGC MainRootWindow 一致)
+   ============================================================ */
+.app {
+  display: grid;
+  grid-template-rows: 5.5vmin 1fr;     /* 顶部 toolbar + 主区 */
+  height: 100vh;
+  width: 100vw;
+  min-height: 480px;
+}
+
+/* ============================================================
+   顶部 Toolbar — 仿 MainToolBar.qml
+   左侧 IFSC branding 区 + 视图按钮 + 指示器
+   ============================================================ */
+.toolbar {
+  background: var(--toolbar-bg);
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: stretch;
+  height: 100%;
+  min-height: 48px;
+  max-height: 64px;
+  position: relative;
+  z-index: 10;
+  border-bottom: 1px solid #000;
+}
+.toolbar::after {
+  /* 底部 1px 分隔 */
+  content: ''; position: absolute; left: 0; right: 0; bottom: -1px;
+  height: 1px; background: #000;
+}
+
+/* 左侧品牌区 (深蓝 #00427F) */
+.toolbar-brand {
+  display: flex; align-items: center;
+  background: linear-gradient(90deg, #00427F 0%, #00427F 28vmin, var(--toolbar-bg) 38vmin);
+  padding: 0 1.2vmin;
+  position: relative;
+  gap: 1vmin;
+  min-width: 24vmin;
+}
+.toolbar-brand::after {
+  /* 深蓝到黑色的渐变结束 */
+  content: '';
+  position: absolute; right: 0; top: 0; bottom: 0;
+  width: 12vmin;
+  background: linear-gradient(90deg, transparent, var(--toolbar-bg));
+  pointer-events: none;
+}
+.toolbar-brand .hamburger {
+  width: 3.5vmin; min-width: 32px; max-width: 44px;
+  height: 3.5vmin; min-height: 32px; max-height: 44px;
+  background: rgba(0,0,0,.18);
+  border: 1px solid rgba(255,255,255,.10);
+  border-radius: 0.4vmin;
+  color: #fff;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: background .15s;
+  flex-shrink: 0;
+}
+.toolbar-brand .hamburger:hover { background: rgba(0,90,171,.6); }
+.toolbar-brand .hamburger svg { width: 55%; height: 55%; }
+.toolbar-brand .logo {
+  height: 3.5vmin; min-height: 28px; max-height: 40px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,.4));
+  flex-shrink: 0;
+}
+.toolbar-brand .brand-text {
+  font-size: clamp(11px, 1.4vmin, 15px);
+  font-weight: 600;
+  letter-spacing: .04em;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,.4);
+  white-space: nowrap;
+}
+.toolbar-brand .brand-text small {
+  display: block;
+  font-weight: 400;
+  font-size: clamp(7px, 0.9vmin, 11px);
+  color: rgba(255,255,255,.65);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  margin-top: 0.2vmin;
+}
+
+/* 中央: 视图切换按钮 (Fly / Analyze / Plan / Setup) */
+.toolbar-views {
+  display: flex;
+  align-items: stretch;
+  padding: 0 8px;
+  gap: 2px;
+}
+.tb-btn {
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,.55);
+  font-family: var(--font-ui);
+  font-size: clamp(11px, 1.3vmin, 15px);
+  font-weight: 600;
+  letter-spacing: .04em;
+  padding: 0 1.4vmin;
+  display: flex;
+  align-items: center;
+  gap: 0.6vmin;
+  cursor: pointer;
+  position: relative;
+  text-transform: uppercase;
+  border-radius: 0.4vmin 0.4vmin 0 0;
+  transition: background .15s, color .15s;
+}
+.tb-btn:hover { color: var(--text); background: rgba(255,255,255,.04); }
+.tb-btn .icon { width: 2.8vmin; min-width: 22px; max-width: 30px; height: 2.8vmin; min-height: 22px; max-height: 30px; opacity: .7; object-fit: contain; }
+.tb-btn.active {
+  color: var(--text);
+  background: linear-gradient(180deg, rgba(0,66,127,.30) 0%, rgba(0,66,127,.05) 100%);
+}
+.tb-btn.active::after {
+  /* 选中下划线 (IFSC 深蓝) */
+  content: '';
+  position: absolute;
+  left: 12px; right: 12px; bottom: 4px;
+  height: 2px;
+  background: #00427F;
+  border-radius: 1px;
+  box-shadow: 0 0 6px rgba(0,66,127,.5);
+}
+.tb-btn.active .icon { opacity: 1; }
+
+/* 右侧: indicators (MainToolBarIndicators) */
+.toolbar-indicators {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  justify-content: flex-end;
+  padding: 0 0.6vmin;
+}
+.indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.5vmin;
+  padding: 0 0.8vmin;
+  font-size: clamp(8px, 1vmin, 12px);
+  color: var(--text);
+  position: relative;
+  cursor: pointer;
+  border-left: 1px solid rgba(255,255,255,.06);
+}
+.indicator:hover { background: rgba(255,255,255,.04); }
+.indicator .ic { width: 2.4vmin; min-width: 16px; max-width: 26px; height: 2.4vmin; min-height: 16px; max-height: 26px; object-fit: contain; }
+.indicator .v {
+  font-weight: 600;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(11px, 1.3vmin, 14px);
+}
+.indicator .label {
+  font-size: clamp(7px, 0.85vmin, 10px);
+  letter-spacing: .14em;
+  color: var(--text-disabled);
+  text-transform: uppercase;
+  display: block;
+  line-height: 1;
+}
+.indicator .v.warn { color: var(--color-orange); }
+.indicator .v.bad  { color: var(--color-red); }
+.indicator .v.ok   { color: var(--color-green); }
+
+/* Link indicator */
+.indicator.link { gap: 8px; }
+.indicator.link .dot {
+  width: 10px; height: 10px;
+  border-radius: 50%;
+  background: var(--color-red);
+  box-shadow: 0 0 8px var(--color-red);
+}
+.indicator.link.connected .dot { background: var(--color-green); box-shadow: 0 0 8px var(--color-green); }
+
+/* Connect big button (右侧深蓝按钮 - IFSC 品牌色) */
+.tb-connect {
+  background: var(--branding-ifsc);
+  color: #fff;
+  border: none;
+  padding: 0 1.8vmin;
+  font-size: clamp(11px, 1.3vmin, 15px);
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 0.6vmin;
+  cursor: pointer;
+  border-left: 1px solid rgba(255,255,255,.06);
+  transition: background .15s;
+}
+.tb-connect:hover { background: var(--branding-ifsc-hi); }
+.tb-connect.connected { background: var(--color-green); color: #000; }
+.tb-connect svg {
+  width: 2vmin; min-width: 16px; max-width: 22px;
+  height: 2vmin; min-height: 16px; max-height: 22px;
+}
+
+.mav-rate {
+  margin-left: 6px;
+  padding: 0 8px;
+  height: 26px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: 'Roboto Mono', monospace;
+  color: #888;
+  background: rgba(255,255,255,0.06);
+  border-radius: 4px;
+  min-width: 110px;
+  justify-content: center;
+  letter-spacing: 0.3px;
+}
+.mav-rate.ok   { color: #00e04b; background: rgba(0, 224, 75, 0.10); }
+.mav-rate.warn { color: #de8500; background: rgba(222, 133, 0, 0.10); }
+.mav-rate.bad  { color: #f32836; background: rgba(243, 40, 54, 0.12); animation: pulse 1.2s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+
+/* ---------- MAVLink 消息面板 ---------- */
+.msg-panel { width: 720px; max-width: 90vw; }
+.msg-panel-summary {
+  display: flex; gap: 18px;
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 4px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: #aaa;
+}
+.msg-panel-summary b { color: #fff; font-size: 14px; }
+.msg-panel-cols {
+  display: grid; grid-template-columns: 1fr 1.4fr; gap: 12px;
+  max-height: 460px;
+}
+.msg-panel-col { display: flex; flex-direction: column; min-height: 0; }
+.msg-panel-h {
+  font-size: 11px; text-transform: uppercase; color: #888;
+  padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.08);
+  margin-bottom: 6px; letter-spacing: 0.6px;
+}
+.msg-stat-list, .msg-list {
+  flex: 1; overflow-y: auto;
+  font-family: 'Roboto Mono', monospace; font-size: 12px;
+}
+.msg-stat-row {
+  display: flex; justify-content: space-between;
+  padding: 4px 6px; border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+.msg-stat-name { color: #c0a8e8; }
+.msg-stat-count { color: #00e04b; font-weight: 600; }
+.msg-row {
+  display: flex; gap: 8px;
+  padding: 5px 8px; border-bottom: 1px solid rgba(255,255,255,0.04);
+  line-height: 1.35;
+}
+.msg-sev { flex-shrink: 0; font-size: 10px; font-weight: 600;
+  padding: 1px 6px; border-radius: 3px; min-width: 64px; text-align: center;
+  height: fit-content; margin-top: 1px;
+}
+.sev-high .msg-sev { background: #f32836; color: #fff; }
+.sev-med  .msg-sev { background: #de8500; color: #fff; }
+.sev-low  .msg-sev { background: rgba(255,255,255,0.10); color: #aaa; }
+.msg-txt { color: #ddd; word-break: break-word; }
+.msg-empty { color: #777; padding: 12px; text-align: center; font-style: italic; }
+
+/* ============================================================
+   主区: FlyView 风格 (左侧 ToolStrip + 中央 Map + 右侧 Telemetry)
+   ============================================================ */
+.main {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  background: var(--window);
+  overflow: hidden;
+  position: relative;
+  min-height: 0;
+}
+
+/* ToolStrip (FlyViewToolStrip) — 左侧垂直工具栏 (QGC 风格) */
+.toolstrip {
+  background: var(--window-shade);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.8vmin 0.6vmin;
+  border-right: 1px solid #000;
+  z-index: 5;
+  gap: 0.4vmin;
+  width: 7vmin;
+  min-width: 60px;
+  max-width: 80px;
+}
+.toolstrip-btn {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  height: auto;
+  min-height: 50px;
+  max-height: 70px;
+  background: transparent;
+  border: none;
+  color: var(--tool-strip-fg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3vmin;
+  cursor: pointer;
+  border-radius: 0.6vmin;
+  font-size: clamp(8px, 1.05vmin, 10px);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.6);
+  font-weight: 600;
+  position: relative;
+  transition: background .15s;
+}
+.toolstrip-btn:hover {
+  background: var(--window-shade-dk);
+  color: var(--text);
+}
+.toolstrip-btn.active {
+  background: rgba(0,66,127,.30);
+  color: var(--text);
+}
+.toolstrip-btn.active::before {
+  /* 左侧 3px 蓝色激活条 (与品牌色一致) */
+  content: '';
+  position: absolute;
+  left: 0; top: 12%; bottom: 12%;
+  width: 0.3vmin;
+  min-width: 2px;
+  background: #00427F;
+  border-radius: 0 2px 2px 0;
+  box-shadow: 0 0 6px rgba(0,66,127,.7);
+}
+.toolstrip-btn .ic {
+  width: 60%;
+  height: auto;
+  opacity: .9;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,.3));
+}
+.toolstrip-btn.active .ic { opacity: 1; }
+.toolstrip-btn span {
+  font-size: inherit;
+  line-height: 1;
+  margin-top: 1px;
+}
+
+/* 内容区: map + telemetry overlay */
+.viewport {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: 1fr auto;  /* map / telemetry bar */
+  min-width: 0;
+  min-height: 0;
+}
+
+/* ============================================================
+   地图 (FlightMap) — 真实 XYZ 瓦片地图 (QGC 风格)
+   ============================================================ */
+.flightmap {
+  position: relative;
+  background: #101418;   /* 瓦片加载前的底色 */
+  overflow: hidden;
+  min-width: 0;
+  min-height: 0;
+}
+.flightmap svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+/* 地图视口: 拖动平移 / 滚轮缩放 (QGC 手势) */
+.map-viewport {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: #101418;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.map-viewport.panning { cursor: grabbing; }
+.map-tiles { position: absolute; inset: 0; }
+.map-tiles-overlay { position: absolute; inset: 0; pointer-events: none; }
+.map-tile {
+  position: absolute;
+  opacity: 0;
+  transition: opacity .18s;
+  user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+}
+.map-overlay { pointer-events: none; }
+.map-attribution {
+  position: absolute;
+  left: 8px;
+  bottom: 4px;
+  z-index: 2;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  color: rgba(255,255,255,.72);
+  text-shadow: 0 1px 2px rgba(0,0,0,.85);
+  pointer-events: none;
+  white-space: nowrap;
+}
+/* 地图离线/瓦片加载失败提示 */
+.map-offline {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  padding: 4px 12px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: #ffd24a;
+  background: rgba(0,0,0,.72);
+  border: 1px solid rgba(255,210,74,.4);
+  border-radius: 4px;
+  pointer-events: none;
+  white-space: nowrap;
+}
+/* 比例尺 (QGC MapScale.qml 风格) */
+.map-scale-bar {
+  position: absolute;
+  left: 8px;
+  bottom: 20px;
+  z-index: 2;
+  pointer-events: none;
+}
+.map-scale-bar .ms-text {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,.85);
+  margin-bottom: 2px;
+  line-height: 1;
+}
+.map-scale-bar .ms-line {
+  display: flex;
+  align-items: stretch;
+  height: 10px;
+}
+.map-scale-bar .ms-line .ms-mid {
+  height: 2px;
+  background: rgba(255,255,255,.9);
+  box-shadow: 0 1px 2px rgba(0,0,0,.8);
+}
+.map-scale-bar .ms-line .ms-end {
+  width: 2px;
+  background: rgba(255,255,255,.9);
+  box-shadow: 0 1px 2px rgba(0,0,0,.8);
+}
+
+/* 地图类型切换菜单 */
+.map-type-menu {
+  position: fixed;
+  z-index: 40;
+  min-width: 160px;
+  background: #1c1f24;
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 6px;
+  padding: 4px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.5);
+}
+.map-type-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 10px;
+  background: transparent;
+  border: none;
+  color: #ddd;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 4px;
+  font-family: inherit;
+}
+.map-type-item:hover { background: rgba(0,66,127,.55); color: #fff; }
+.map-type-item.active { color: #5cff6a; }
+.map-type-item span { flex: 1; }
+
+/* Vehicle instrument overlay (左上 仪表组, 仿 QGC CustomFlyViewOverlay) */
+.instrument-overlay {
+  position: absolute;
+  top: 1.2vmin; left: 1.2vmin;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8vmin;
+  z-index: 3;
+  pointer-events: none;
+  max-width: calc(100vw - 18vmin);
+}
+.instrument-overlay > * { pointer-events: auto; }
+
+/* 顶部罗盘条 (QGC CustomFlyViewOverlay 风格) — 响应式 */
+.compass-bar {
+  width: 28vmin;
+  min-width: 240px;
+  max-width: 420px;
+  height: 2.6vmin;
+  min-height: 20px;
+  max-height: 28px;
+  background: rgba(34,34,34,.88);
+  border: 1px solid #000;
+  border-radius: 3px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,.35);
+}
+.compass-bar .compass-ticks {
+  position: absolute;
+  top: 0; left: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: clamp(9px, 1.4vmin, 12px);
+  font-weight: 700;
+  color: rgba(255,255,255,.85);
+  will-change: transform;
+  transition: transform .12s linear;
+}
+.compass-bar .tick {
+  flex: 0 0 auto;
+  width: 1px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  flex-shrink: 0;
+}
+.compass-bar .tick.major { color: #fff; font-size: clamp(10px, 1.6vmin, 13px); }
+.compass-bar .tick.major.n { color: #f32836; }
+.compass-bar .tick.major.s { color: #fff; }
+.compass-bar .heading-readout {
+  position: absolute;
+  top: 0; bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #00427F;
+  color: #fff;
+  font-family: var(--font-mono);
+  font-size: clamp(10px, 1.6vmin, 13px);
+  font-weight: 700;
+  line-height: 1;
+  padding: 0 1.2vmin;
+  min-width: 5vmin;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 2px;
+  z-index: 2;
+  box-shadow: 0 0 4px rgba(0,66,127,.6);
+}
+/* 中央垂直基准线 (heading 标记) */
+.compass-bar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 1px;
+  height: 35%;
+  background: #f32836;
+  z-index: 3;
+  transform: translateX(-50%);
+}
+
+/* 仪表主体: 人工地平仪 + 罗盘 (圆形) — 响应式 */
+.instrument-row {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 0.8vmin;
+}
+.attitude-box {
+  width: 16vmin;
+  min-width: 130px;
+  max-width: 220px;
+  aspect-ratio: 1 / 1;
+  height: auto;
+  background: #0d1f33;
+  border: 1px solid #000;
+  border-radius: 8px;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 2px 12px rgba(0,0,0,.45);
+}
+.attitude-box canvas { width: 100%; height: 100%; display: block; }
+.attitude-box .att-label {
+  position: absolute;
+  bottom: 4%; left: 0; right: 0;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: clamp(8px, 1.1vmin, 10px);
+  color: rgba(255,255,255,.7);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  text-shadow: 0 1px 2px rgba(0,0,0,.7);
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* 罗盘 (圆形 — 仿 QGC CustomFlyViewOverlay.compassBackground) */
+.compass-box {
+  width: 16vmin;
+  min-width: 130px;
+  max-width: 220px;
+  aspect-ratio: 1 / 1;
+  height: auto;
+  background: rgba(34,34,34,.85);
+  border: 1px solid #000;
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0,0,0,.45);
+}
+.compass-box canvas { width: 100%; height: 100%; display: block; }
+.compass-box .compass-label {
+  position: absolute;
+  top: 6px; left: 0; right: 0;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: rgba(255,255,255,.7);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+/* 右侧数据读数 (QGC 风格紧凑型) */
+.instrument-readouts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4vmin;
+  font-family: var(--font-mono);
+  min-width: 12vmin;
+  flex: 1;
+  justify-content: center;
+}
+.ir {
+  background: rgba(0,0,0,.55);
+  border: 1px solid rgba(255,255,255,.08);
+  padding: 0.6vmin 0.8vmin;
+  border-radius: 4px;
+  display: grid;
+  grid-template-columns: 4.5vmin 1fr;
+  align-items: baseline;
+  gap: 0.8vmin;
+  backdrop-filter: blur(2px);
+}
+.ir .k { font-size: clamp(8px, 1.1vmin, 10px); color: var(--text-disabled); letter-spacing: .12em; text-transform: uppercase; }
+.ir .v { font-size: clamp(13px, 1.8vmin, 18px); font-weight: 600; font-variant-numeric: tabular-nums; }
+.ir .u { font-size: clamp(8px, 1.1vmin, 10px); color: var(--text-disabled); margin-left: 3px; }
+.ir.armed .v { color: var(--color-red); }
+
+/* Map widget (右上 地图缩放控件) — 仿 QGC QGCMapToolButton.qml */
+.map-widgets {
+  position: absolute;
+  top: 1.2vmin; right: 1.2vmin;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6vmin;
+  z-index: 3;
+}
+.map-widget-btn {
+  width: 4.5vmin;
+  min-width: 36px;
+  max-width: 56px;
+  height: 4.5vmin;
+  min-height: 36px;
+  max-height: 56px;
+  background: rgba(0,0,0,.7);
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+  transition: background .12s, transform .1s;
+  box-shadow: 0 2px 8px rgba(0,0,0,.35);
+}
+.map-widget-btn:hover { background: #00427F; border-color: #005aab; }
+.map-widget-btn:active { transform: scale(0.92); background: #005aab; }
+/* 仿 QGC QGCColoredImage: 图标占满按钮 (anchors.fill: parent), opacity 0.6 (默认) -> 1.0 (高亮) */
+.map-widget-btn img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  padding: 18%;
+  opacity: 0.6;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,.5));
+  pointer-events: none;
+  user-select: none;
+  transition: opacity .12s;
+}
+.map-widget-btn:hover img { opacity: 1.0; }
+
+/* Map overlays (右下 信息) */
+.map-status {
+  position: absolute;
+  right: 1.2vmin; bottom: 1.2vmin;
+  background: rgba(0,0,0,.55);
+  border: 1px solid rgba(255,255,255,.1);
+  border-radius: 4px;
+  padding: 0.8vmin 1vmin;
+  font-family: var(--font-mono);
+  font-size: clamp(8px, 1.1vmin, 11px);
+  color: var(--text);
+  z-index: 3;
+  min-width: 16vmin;
+}
+.map-status .row { display: flex; justify-content: space-between; padding: 0.2vmin 0; gap: 1vmin; }
+.map-status .row .k { color: var(--text-disabled); letter-spacing: .12em; text-transform: uppercase; font-size: clamp(7px, 0.95vmin, 9px); }
+.map-status .row .v { font-weight: 600; }
+
+/* ============================================================
+   底部 Telemetry Bar (TelemetryValuesBar)
+   ============================================================ */
+.telemetry-bar {
+  background: var(--window-shade);
+  border-top: 1px solid #000;
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 0;
+  height: 7.5vmin;
+  min-height: 60px;
+  max-height: 90px;
+  width: 100%;
+  flex-shrink: 0;
+}
+.t-cell {
+  border-right: 1px solid #000;
+  padding: 0.6vmin 0.8vmin;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+}
+.t-cell:last-child { border-right: none; }
+.t-cell .l {
+  font-size: clamp(7px, 0.95vmin, 10px);
+  color: var(--text-disabled);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  margin-bottom: 0.3vmin;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.t-cell .v {
+  font-family: var(--font-mono);
+  font-size: clamp(13px, 1.9vmin, 22px);
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.t-cell .u {
+  font-size: clamp(8px, 1vmin, 11px);
+  color: var(--text-disabled);
+  margin-left: 3px;
+  font-weight: 400;
+}
+.t-cell .bar {
+  margin-top: 0.4vmin;
+  height: 0.4vmin;
+  min-height: 3px;
+  background: var(--window-shade-dk);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.t-cell .bar > span {
+  display: block;
+  height: 100%;
+  background: var(--color-green);
+  transition: width .25s ease, background-color .25s;
+}
+.t-cell .bar > span.warn { background: var(--color-orange); }
+.t-cell .bar > span.bad  { background: var(--color-red); }
+
+/* ============================================================
+   Toolstrip popup menus
+   ============================================================ */
+.popup {
+  position: absolute;
+  background: var(--window);
+  border: 1px solid var(--window-shade);
+  border-radius: 6px;
+  box-shadow: 0 12px 32px rgba(0,0,0,.5);
+  z-index: 100;
+  min-width: 240px;
+  padding: 6px;
+}
+.popup-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 4px;
+  font-size: var(--h3);
+  color: var(--text);
+  cursor: pointer;
+  border: none;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  transition: background .12s;
+}
+.popup-item:hover { background: rgba(0,66,127,.40); }
+.popup-item.active { background: rgba(0,66,127,.20); }
+.popup-item .ic { width: 22px; height: 22px; }
+.popup-item svg { width: 22px; height: 22px; flex-shrink: 0; }
+.popup-item.danger { color: var(--color-red); }
+.popup-item.success { color: var(--color-green); }
+.popup hr {
+  border: none;
+  border-top: 1px solid rgba(255,255,255,.06);
+  margin: 4px 0;
+}
+.popup-title {
+  font-size: 10px;
+  color: var(--text-disabled);
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  padding: 8px 10px 4px;
+  font-weight: 600;
+}
+
+/* Main menu (汉堡菜单弹出) */
+.popup.main-menu { padding: 6px; }
+
+/* ============================================================
+   Analyze / Logs view
+   ============================================================ */
+.view-padded { padding: 24px; overflow: auto; height: 100%; }
+.section-title {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 4px;
+  letter-spacing: .02em;
+}
+.section-sub {
+  font-size: 12px;
+  color: var(--text-disabled);
+  margin: 0 0 20px;
+}
+.card {
+  background: var(--window-shade);
+  border: 1px solid #000;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.card-head {
+  background: var(--window-shade-dk);
+  padding: 12px 16px;
+  border-bottom: 1px solid #000;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.card-title {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+.card-body { padding: 16px; }
+
+.toolbar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.input {
+  background: var(--window-shade-dk);
+  border: 1px solid #000;
+  border-radius: 4px;
+  color: var(--text);
+  padding: 8px 10px;
+  font-size: var(--h3);
+  outline: none;
+  min-width: 260px;
+  font-family: var(--font-ui);
+}
+.input:focus { border-color: var(--branding-blue); }
+
+.btn {
+  background: var(--window-shade-dk);
+  color: var(--text);
+  border: 1px solid #000;
+  border-radius: 4px;
+  padding: 8px 14px;
+  font-size: var(--h3);
+  font-weight: 600;
+  letter-spacing: .04em;
+  cursor: pointer;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn:hover { background: var(--window-shade-lt); }
+.btn.primary {
+  background: var(--branding-blue);
+  border-color: var(--branding-blue);
+  color: #fff;
+}
+.btn.primary:hover { background: #7a5fe0; }
+.btn.danger {
+  background: var(--color-red);
+  border-color: var(--color-red);
+  color: #fff;
+}
+.btn.success {
+  background: var(--color-green);
+  border-color: var(--color-green);
+  color: #000;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: var(--window-shade-dk);
+  border: 1px solid #000;
+  border-radius: 999px;
+  font-size: 11px;
+  cursor: pointer;
+}
+.chip.active {
+  background: var(--branding-blue);
+  border-color: var(--branding-blue);
+  color: #fff;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.table th, .table td {
+  text-align: left;
+  padding: 10px 14px;
+  border-bottom: 1px solid #000;
+  font-size: 12px;
+}
+.table th {
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--text-disabled);
+  background: var(--window-shade-dk);
+  font-weight: 600;
+}
+.table tbody tr { cursor: pointer; transition: background .12s; }
+.table tbody tr:hover { background: rgba(96,69,197,.10); }
+.table tr.selected { background: rgba(96,69,197,.18); }
+.table .mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 3px;
+  font-size: 10px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.badge.ok   { background: rgba(0,224,75,.15); color: var(--color-green); }
+.badge.warn { background: rgba(222,133,0,.15); color: var(--color-orange); }
+.badge.bad  { background: rgba(243,40,54,.15);  color: var(--color-red); }
+
+.kv-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.kv {
+  background: var(--window-shade-dk);
+  border: 1px solid #000;
+  border-radius: 4px;
+  padding: 10px 12px;
+}
+.kv .k {
+  display: block;
+  font-size: 9px;
+  color: var(--text-disabled);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.kv .v {
+  font-family: var(--font-mono);
+  font-size: 16px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.kv .u { font-size: 10px; color: var(--text-disabled); margin-left: 3px; font-weight: 400; }
+
+/* ============================================================
+   Responsive
+   ============================================================ */
+@media (max-width: 1100px) {
+  .telemetry-bar { grid-template-columns: repeat(4, 1fr); }
+  .kv-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 800px) {
+  .instrument-overlay { display: none; }
+  .toolbar { grid-template-columns: auto 1fr auto; }
+  .toolbar-brand .brand-text { display: none; }
+}
+
+/* ============================================================
+   utility
+   ============================================================ */
+.hidden { display: none !important; }
+.row { display: flex; align-items: center; gap: 8px; }
+.col { display: flex; flex-direction: column; gap: 8px; }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.muted { color: var(--text-disabled); }
+.right { margin-left: auto; }
+.pulse {
+  animation: qgcPulse 1.4s ease-in-out infinite;
+}
+@keyframes qgcPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .5; }
+}
+.codeblock {
+  background: #111;
+  border: 1px solid #000;
+  border-radius: 4px;
+  padding: 14px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text);
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+
+/* ========== V1.0.1: inline svg icon 通用样式 (替代 <img src=svg>) ========== */
+svg.icon {
+  width: 2.4vmin; min-width: 18px; max-width: 26px;
+  height: 2.4vmin; min-height: 18px; max-height: 26px;
+  opacity: .7;
+  fill: currentColor;
+  vertical-align: middle;
+  flex-shrink: 0;
+}
+.toolstrip-btn svg.icon { width: 60%; height: auto; opacity: .9; filter: drop-shadow(0 1px 2px rgba(0,0,0,.3)); }
+.toolstrip-btn.active svg.icon { opacity: 1; }
+.indicator svg.icon { width: 2.4vmin; min-width: 16px; max-width: 26px; height: 2.4vmin; min-height: 16px; max-height: 26px; object-fit: contain; }
+.tb-btn.active svg.icon { opacity: 1; }
+
+/* ============================================================
+   参数编辑器 (QGC ParameterEditor.qml 风格)
+   仿 QGC MainToolBar + ParameterEditor + ParameterEditorDialog
+   ============================================================ */
+.params-editor {
+  display: flex; flex-direction: column;
+  height: 100%;
+  background: var(--window-shade);
+  overflow: hidden;
+}
+/* IFSC-Station 控制器切换条 (IFSC_DIST_SW: 0=PID / 1=LQR(INDI) / 2=MPC) */
+.ctrl-switch {
+  display: flex; align-items: center; gap: 6px;
+  padding: 6px 12px;
+  background: linear-gradient(180deg, rgba(0,60,115,0.35), rgba(0,0,0,0.25));
+  border-bottom: 1px solid rgba(0,0,0,0.4);
+  flex-shrink: 0;
+}
+.ctrl-switch-title {
+  font-size: 11px; font-weight: 700;
+  color: var(--text);
+  letter-spacing: 1px;
+  margin-right: 4px;
+  text-transform: uppercase;
+}
+.ctrl-btn {
+  padding: 4px 14px;
+  font-size: 11px;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  color: rgba(255,255,255,0.85);
+  background: rgba(0,0,0,0.35);
+  border: 1px solid rgba(255,255,255,0.18);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: background .12s, color .12s, border-color .12s;
+}
+.ctrl-btn:hover:not(:disabled) { background: rgba(0,90,171,0.55); }
+.ctrl-btn.active {
+  background: var(--branding-ifsc);
+  border-color: var(--branding-ifsc-hi);
+  color: #fff;
+  box-shadow: 0 0 8px rgba(0,116,255,0.45);
+}
+.ctrl-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.ctrl-switch-state {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--color-green);
+  padding: 3px 10px;
+  border-radius: 3px;
+  background: rgba(0,0,0,0.3);
+}
+.ctrl-switch-state:empty { display: none; }
+.ctrl-switch:has(.ctrl-btn:disabled) .ctrl-switch-state { color: var(--text-disabled); }
+.params-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px;
+  background: var(--window-shade-dk);
+  border-bottom: 1px solid rgba(0,0,0,0.4);
+  flex-shrink: 0;
+}
+.params-search-wrap {
+  position: relative;
+  flex: 1;
+  max-width: 420px;
+  display: flex;
+  align-items: center;
+}
+.params-search-icon {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 13px;
+  height: 13px;
+  opacity: 0.55;
+  filter: invert(1);
+  pointer-events: none;
+}
+.params-search {
+  flex: 1; max-width: 420px;
+  width: 100%;
+  background: rgba(0,0,0,0.3);
+  color: var(--text);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 3px;
+  padding: 6px 10px 6px 28px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  outline: none;
+}
+.params-search:focus { border-color: var(--branding-ifsc); }
+.params-search::placeholder { color: var(--text-disabled); }
+.params-check {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 11px; color: rgba(255,255,255,0.7);
+  cursor: pointer; user-select: none;
+}
+.params-btn {
+  display: inline-flex; align-items: center; gap: 4px;
+  background: rgba(0,0,0,0.3);
+  color: var(--text);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 3px;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-family: var(--font-ui);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .12s;
+}
+.params-btn:hover { background: rgba(0,90,171,0.5); }
+.params-btn.primary { background: var(--branding-ifsc); border-color: var(--branding-ifsc); }
+.params-btn.primary:hover { background: var(--branding-ifsc-hi); }
+.params-btn svg, .params-btn img { width: 12px; height: 12px; filter: invert(1); opacity: 0.9; }
+.params-status {
+  margin-left: auto;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 3px;
+  background: rgba(0,0,0,0.2);
+}
+.ps-ok { color: var(--color-green); }
+.ps-warn { color: var(--color-orange); }
+.ps-bad { color: var(--color-red); }
+.ps-muted { color: var(--text-disabled); }
+
+.params-body {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+.params-categories {
+  background: var(--window);
+  border-right: 1px solid rgba(0,0,0,0.4);
+  overflow-y: auto;
+  padding: 6px 0;
+}
+.cat-item {
+  padding: 6px 14px;
+  font-size: 12px;
+  color: rgba(255,255,255,0.7);
+  cursor: pointer;
+  border-left: 3px solid transparent;
+  user-select: none;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.cat-item:hover { background: rgba(255,255,255,0.04); color: var(--text); }
+.cat-item.active {
+  background: rgba(0,66,127,0.25);
+  color: var(--text);
+  border-left-color: var(--branding-ifsc);
+}
+.cat-count {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-disabled);
+}
+.cat-item.active .cat-count { color: rgba(255,255,255,0.85); }
+
+.params-list {
+  overflow: auto;
+  background: var(--window-shade);
+}
+.params-empty {
+  padding: 60px 20px;
+  text-align: center;
+  color: var(--text-disabled);
+  font-size: 14px;
+}
+.params-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  font-family: var(--font-mono);
+}
+.params-table thead th {
+  position: sticky; top: 0; z-index: 2;
+  background: var(--window-shade-dk);
+  text-align: left;
+  font-weight: 600;
+  font-size: 11px;
+  color: var(--text-disabled);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  padding: 8px 10px;
+  border-bottom: 1px solid rgba(0,0,0,0.5);
+  font-family: var(--font-ui);
+}
+.params-table tbody tr {
+  cursor: pointer;
+  transition: background .08s;
+  border-bottom: 1px solid rgba(255,255,255,0.03);
+}
+.params-table tbody tr:hover { background: rgba(0,66,127,0.18); }
+.params-table tbody tr.pending td.col-val { color: var(--color-orange); font-style: italic; }
+.params-table td {
+  padding: 5px 10px;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.params-table .col-name { color: var(--text); }
+.params-table .col-val  { text-align: right; color: #c0e8ff; min-width: 120px; }
+.params-table .col-type { color: var(--text-disabled); font-size: 10px; text-align: center; width: 50px; }
+.params-table .col-idx  { color: var(--text-disabled); font-size: 10px; text-align: right; width: 50px; }
+
+.mono { font-family: var(--font-mono); }
+
+/* ---- 编辑对话框 (QGC ParameterEditorDialog 风格) ---- */
+.param-dialog-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.6);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000;
+  animation: fadein .15s;
+}
+@keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+.param-dialog {
+  background: var(--window-shade);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 6px;
+  min-width: 380px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  animation: slideup .2s;
+}
+@keyframes slideup { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.param-dialog-h {
+  background: linear-gradient(180deg, var(--branding-ifsc), #003a72);
+  color: #fff;
+  padding: 10px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 6px 6px 0 0;
+}
+.param-dialog-body {
+  padding: 16px;
+  display: flex; flex-direction: column; gap: 10px;
+}
+.param-dialog-body .row {
+  display: flex; align-items: center; gap: 12px;
+  font-size: 12px;
+}
+.param-dialog-body .k {
+  color: var(--text-disabled);
+  text-transform: uppercase;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+  min-width: 90px;
+}
+.param-dialog-body .v { color: var(--text); }
+.param-dialog-body .edit-row { padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.08); }
+.param-input {
+  flex: 1;
+  background: rgba(0,0,0,0.4);
+  color: var(--text);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 3px;
+  padding: 6px 10px;
+  font-size: 14px;
+  font-family: var(--font-mono);
+  outline: none;
+}
+.param-input:focus { border-color: var(--branding-ifsc); }
+.param-hint {
+  font-size: 10px;
+  color: var(--color-orange);
+  font-style: italic;
+  margin-top: 4px;
+}
+.param-dialog-actions {
+  padding: 10px 16px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  display: flex; gap: 8px; justify-content: flex-end;
+}
+
+/* ---- Tools 下拉菜单 (QGC ParameterEditor.qml 工具菜单) ---- */
+.params-tools-wrap { position: relative; }
+.params-tools-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  min-width: 230px;
+  background: var(--window-shade);
+  border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 4px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.55);
+  z-index: 500;
+  padding: 4px 0;
+  animation: fadein .12s;
+}
+.params-menu-item {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-family: var(--font-ui);
+  font-size: 12px;
+  text-align: left;
+  padding: 8px 12px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.params-menu-item:hover { background: var(--branding-ifsc); color: #fff; }
+.params-menu-item.danger:hover { background: var(--color-red); color: #fff; }
+.params-menu-item:disabled { color: var(--text-disabled); cursor: not-allowed; }
+.params-menu-item:disabled:hover { background: transparent; }
+.params-menu-item img { width: 14px; height: 14px; filter: invert(1); opacity: .85; flex-shrink: 0; }
+.params-menu-item:hover img { opacity: 1; }
+.params-menu-item:disabled img { opacity: .35; }
+.params-menu-sep { height: 1px; background: rgba(255,255,255,0.08); margin: 4px 0; }
+
+/* ---- 分类树子组 / 展开箭头 ---- */
+.cat-arrow {
+  display: inline-block;
+  width: 14px;
+  color: var(--text-disabled);
+  font-size: 10px;
+  transition: transform .12s;
+}
+.cat-item.cat-group {
+  padding-left: 30px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.55);
+}
+.cat-item.cat-group:hover { color: var(--text); }
+.cat-item.cat-group.active {
+  color: var(--text);
+  background: rgba(0,66,127,0.35);
+  border-left-color: var(--branding-ifsc-hi);
+}
+
+/* ---- 已修改行高亮 (QGC modified = 黄色斜体) ---- */
+.params-table tbody tr.modified td.col-name { color: var(--button-hl); }
+.params-table tbody tr.modified td.col-val { color: var(--button-hl); }
+.params-table tbody tr.modified.pending td.col-val { color: var(--color-orange); }
+
+/* ---- 校验错误 / Force save (QGC ParameterEditorDialog) ---- */
+.param-validate-error {
+  background: rgba(243,40,54,0.15);
+  border: 1px solid rgba(243,40,54,0.5);
+  color: #ff7b84;
+  font-size: 11px;
+  padding: 6px 10px;
+  border-radius: 3px;
+  font-family: var(--font-mono);
+}
+.param-force-save {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px;
+  color: var(--color-orange);
+  cursor: pointer;
+  user-select: none;
+}
+.param-force-save input { cursor: pointer; }
+
+/* ---- 差异对话框 (QGC ParameterDiffDialog) ---- */
+.diff-dialog { min-width: 560px; max-width: 720px; }
+.diff-desc {
+  font-size: 12px;
+  color: rgba(255,255,255,0.8);
+  line-height: 1.5;
+}
+.diff-warn {
+  background: rgba(222,133,0,0.12);
+  border: 1px solid rgba(222,133,0,0.35);
+  color: var(--color-orange);
+  font-size: 11px;
+  padding: 6px 10px;
+  border-radius: 3px;
+}
+.diff-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  max-height: 300px;
+  overflow-y: auto;
+  display: block;
+}
+.diff-table thead {
+  position: sticky; top: 0;
+  background: var(--window-shade-dk);
+}
+.diff-table th {
+  text-align: left;
+  font-weight: 600;
+  font-size: 11px;
+  color: var(--text-disabled);
+  text-transform: uppercase;
+  letter-spacing: .5px;
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(0,0,0,0.5);
+  font-family: var(--font-ui);
+}
+.diff-table td {
+  padding: 5px 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.diff-check { width: 28px; text-align: center; }
+.diff-check input { cursor: pointer; vertical-align: middle; }
+.diff-skip { opacity: .45; }
+.diff-skip input:disabled { cursor: not-allowed; }
+.diff-skip-tag {
+  font-size: 10px;
+  color: var(--color-orange);
+  border: 1px solid rgba(222,133,0,0.4);
+  border-radius: 3px;
+  padding: 0 4px;
+  margin-left: 6px;
+}
+.diff-type { color: var(--text-disabled); font-size: 10px; margin-left: 4px; }
+.diff-na { color: var(--text-disabled); font-style: italic; }
+
+/* ============================================================
+   Setup 校准 UI (QGC SensorsSetup.qml / RadioComponent.qml)
+   ============================================================ */
+.cal-layout {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  gap: 14px;
+  align-items: stretch;
+}
+
+/* 校准按钮 (QGC IndicatorButton: 左侧绿点 = 已校准) */
+.cal-btn {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  background: var(--window-shade-dk);
+  color: var(--text);
+  border: 1px solid #000;
+  border-radius: 4px;
+  padding: 8px 10px 8px 28px;
+  font-size: var(--h3);
+  font-weight: 600;
+  letter-spacing: .03em;
+  cursor: pointer;
+  transition: background .12s;
+}
+.cal-btn:hover:not(:disabled) { background: var(--window-shade-lt); }
+.cal-btn:disabled { opacity: .45; cursor: not-allowed; }
+/* 绿色指示灯 (QGC indicatorGreen) */
+.cal-btn::before {
+  content: '';
+  position: absolute;
+  left: 8px; top: 50%;
+  width: 10px; height: 10px;
+  margin-top: -5px;
+  border-radius: 50%;
+  background: #333;
+  border: 1px solid #000;
+  transition: background .2s, box-shadow .2s;
+}
+.cal-btn.calibrated::before {
+  background: var(--color-green);
+  box-shadow: 0 0 6px rgba(0,224,75,.7);
+}
+
+/* 进度条 */
+.cal-progress {
+  position: relative;
+  height: 14px;
+  background: var(--window-shade-dk);
+  border: 1px solid #000;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.cal-progress-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--branding-ifsc), #4d9cff);
+  transition: width .3s ease;
+}
+.cal-progress-fill[style*="100%"] { background: linear-gradient(90deg, #00a03c, var(--color-green)); }
+
+.cal-help {
+  font-size: 12px;
+  color: var(--color-grey);
+  line-height: 1.5;
+  min-height: 36px;
+}
+
+/* 6 方位状态块 (QGC VehicleRotationCal) */
+.cal-sides {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.cal-side {
+  position: relative;
+  background: var(--window-shade-dk);
+  border: 2px solid #444;
+  border-radius: 4px;
+  padding: 8px;
+  text-align: center;
+  transition: border-color .2s, box-shadow .2s, background .2s;
+}
+.cal-side-img {
+  display: block;
+  width: 100%;
+  max-height: 72px;
+  object-fit: contain;
+  margin: 0 auto 4px;
+  opacity: .75;
+}
+.cal-side-label {
+  font-size: 10px;
+  color: var(--text-disabled);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.cal-side-state {
+  font-size: 10px;
+  font-weight: 600;
+  margin-top: 2px;
+  color: var(--text-disabled);
+}
+.cal-side.in-progress {
+  border-color: var(--color-orange);
+  background: rgba(222,133,0,.12);
+  box-shadow: 0 0 8px rgba(222,133,0,.35);
+  animation: qgcPulse 1.4s ease-in-out infinite;
+}
+.cal-side.in-progress .cal-side-img { opacity: 1; }
+.cal-side.in-progress .cal-side-state { color: var(--color-orange); }
+.cal-side.done {
+  border-color: var(--color-green);
+  background: rgba(0,224,75,.10);
+}
+.cal-side.done .cal-side-img { opacity: 1; }
+.cal-side.done .cal-side-state { color: var(--color-green); }
+
+/* 校准日志区 (QGC statusTextArea) */
+.cal-log {
+  background: var(--window-shade-dk);
+  border: 1px solid #000;
+  border-radius: 4px;
+  padding: 8px 10px;
+  max-height: 150px;
+  overflow-y: auto;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 1.6;
+  color: var(--color-grey);
+}
+.cal-log-line { white-space: pre-wrap; word-break: break-all; }
+
+/* RC 通道条 (QGC RadioComponent channel bars) */
+.rc-bars { display: flex; flex-direction: column; gap: 5px; }
+.rc-row {
+  display: grid;
+  grid-template-columns: 44px 1fr 56px;
+  gap: 8px;
+  align-items: center;
+}
+.rc-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-disabled);
+  text-align: right;
+}
+.rc-track {
+  position: relative;
+  height: 14px;
+  background: var(--window-shade-dk);
+  border: 1px solid #000;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.rc-fill {
+  position: absolute;
+  top: 0; height: 100%;
+  width: 0%;
+  left: 50%;
+  background: linear-gradient(90deg, var(--branding-ifsc), #4d9cff);
+  transition: width .05s linear, left .05s linear;
+}
+.rc-center {
+  position: absolute;
+  left: 50%; top: 0; bottom: 0;
+  width: 1px;
+  background: rgba(255,255,255,.35);
+}
+.rc-value {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-disabled);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 900px) {
+  .cal-layout { grid-template-columns: 1fr; }
+  .cal-sides { grid-template-columns: repeat(2, 1fr); }
+}
+

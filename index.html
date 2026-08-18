@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>IFSC-Station</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%2300427F'/%3E%3Cpath d='M16 6 L24 26 L16 22 L8 26 Z' fill='white'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="src/styles.css" />
+<!-- 高德瓦片子域名预连接: 提前完成 DNS+TCP+TLS 握手 (实测单次握手 0.5-0.9s),
+     地图瓦片请求时连接已建立, 避免每个瓦片首包多等一个握手往返 -->
+<link rel="preconnect" href="https://webst01.is.autonavi.com" />
+<link rel="preconnect" href="https://webst03.is.autonavi.com" />
+<link rel="preconnect" href="https://webst04.is.autonavi.com" />
+</head>
+<body>
+<div class="app">
+  <!-- ==================== 顶部 Toolbar (MainToolBar.qml) ==================== -->
+  <header class="toolbar" id="toolbar">
+    <!-- 左: IFSC 品牌区 + 视图切换 -->
+    <div class="toolbar-brand">
+      <button class="hamburger" id="btnMenu" title="主菜单">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <line x1="4" y1="7" x2="20" y2="7"/>
+          <line x1="4" y1="12" x2="20" y2="12"/>
+          <line x1="4" y1="17" x2="20" y2="17"/>
+        </svg>
+      </button>
+      <img class="logo" src="qrc/resources/icons/IFSC_logo.png" alt="IFSC" />
+      <div class="brand-text">
+        IFSC-Station
+        <small>Ground Control Station</small>
+      </div>
+    </div>
+
+    <!-- 中: 视图切换 (Fly / Plan / Analyze / Setup) -->
+    <div class="toolbar-views">
+      <button class="tb-btn active" data-view="fly">
+        <img class="icon" src="qrc/resources/toolbar/PaperPlane.svg" alt=""/>
+        Fly
+      </button>
+      <button class="tb-btn" data-view="plan">
+        <img class="icon" src="qrc/resources/toolbar/Plan.svg" alt=""/>
+        Plan
+      </button>
+      <button class="tb-btn" data-view="analyze">
+        <img class="icon" src="qrc/resources/toolbar/Analyze.svg" alt=""/>
+        Analyze
+      </button>
+      <button class="tb-btn" data-view="setup">
+        <img class="icon" src="qrc/resources/toolbar/Gears.svg" alt=""/>
+        Setup
+      </button>
+      <button class="tb-btn" data-view="params" title="参数编辑 (QGC Parameter Editor)">
+        <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M3 6h18M3 12h18M3 18h12"/>
+          <circle cx="20" cy="18" r="1.5" fill="currentColor" stroke="none"/>
+        </svg>
+        Params
+      </button>
+    </div>
+
+    <!-- 右: indicators + connect -->
+    <div class="toolbar-indicators">
+      <div class="indicator link" id="linkIndicator" title="通信链路">
+        <span class="dot"></span>
+        <div>
+          <span class="label">Link</span>
+          <span class="v" id="linkText">Disconnected</span>
+        </div>
+      </div>
+      <div class="indicator" id="batteryIndicator" title="电池">
+        <svg class="icon" enable-background="new 0 0 72 72" version="1.1" viewBox="0 0 72 72" xml:space="preserve" xmlns="http://www.w3.org/2000/svg">
+<style type="text/css">
+	.st0{fill:none;}
+	.st1{fill:#FFFFFF;stroke:#FFFFFF;stroke-width:6;stroke-miterlimit:10;}
+	.st2{fill:#FFFFFF;stroke:#FFFFFF;stroke-width:2;}
+</style>
+<path class="st0" d="m14.4 65.5v-55c0-1.6 1.9-2.9 4.2-2.9h34.7c2.4 0 4.2 1.3 4.2 2.9v55c0 1.6-1.9 2.9-4.2 2.9h-34.6c-2.4 0-4.3-1.3-4.3-2.9z"/>
+<g transform="translate(-127.22 216.2)">
+	<path class="st1" d="m171.9-208c0 0.2-0.2 0.4-0.4 0.4h-16.5c-0.2 0-0.4-0.2-0.4-0.4v-4.2c0-0.2 0.2-0.4 0.4-0.4h16.5c0.2 0 0.4 0.2 0.4 0.4v4.2z"/>
+</g>
+<path class="st2" d="m51.6 9.4h-32c-2.2 0-3.9 1.3-3.9 2.8v52.9c0 1.6 1.7 2.8 3.9 2.8h31.9c2.2 0 3.9-1.3 3.9-2.8v-52.9c0.1-1.6-1.7-2.8-3.8-2.8zm-31 14.6h30.1v8.2h-30.1v-8.2zm30 39.8h-30v-8.2h30.1v8.2zm0-10.5h-30v-8.2h30.1v8.2zm0-10.5h-30v-8.2h30.1v8.2zm0-21.1h-30v-8.2h30.1v8.2z"/>
+</svg>
+        <div>
+          <span class="label">Battery</span>
+          <span class="v" id="batteryText">--%</span>
+        </div>
+      </div>
+      <div class="indicator" id="gpsIndicator" title="GPS">
+        <svg class="icon" id="gpsIndicatorIcon" version="1.1"
+	 xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" xmlns:cc="http://creativecommons.org/ns#" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg" sodipodi:docname="gps.svg" inkscape:version="0.91 r13725"
+	 xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="-250 452 72 72"
+	 style="enable-background:new -250 452 72 72;" xml:space="preserve">
+<style type="text/css">
+	#gpsIndicatorIcon .st0{display:none;}
+	#gpsIndicatorIcon .st1{display:inline;}
+	#gpsIndicatorIcon .st2{fill:none;stroke:#EB008B;stroke-width:0.25;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10;}
+	#gpsIndicatorIcon .st3{fill:#FFFFFF;stroke:#FFFFFF;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10;}
+	#gpsIndicatorIcon .st4{fill:none;stroke:#FFFFFF;stroke-width:3.9;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10;}
+	#gpsIndicatorIcon .st5{fill:none;stroke:#FFFFFF;stroke-width:4.5;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10;}
+	#gpsIndicatorIcon .st6{display:inline;fill:none;stroke:#224A80;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10;}
+</style>
+<title  id="title4758">GPS</title>
+<sodipodi:namedview  inkscape:cy="55" bordercolor="#666666" showgrid="false" borderopacity="1" objecttolerance="10" guidetolerance="10" inkscape:cx="55" inkscape:zoom="11.136364" gridtolerance="10" pagecolor="#808080" inkscape:pageopacity="0" inkscape:pageshadow="2" inkscape:window-height="480" inkscape:current-layer="svg3852" inkscape:window-width="640" id="namedview3929">
+	</sodipodi:namedview>
+<g id="Layer_2" class="st0">
+</g>
+<g id="ex_thick" transform="matrix(-1,0,0,-1,111.82126,108.29692)">
+</g>
+<g id="Layer_2_copy_3" class="st0">
+</g>
+<g id="ex_thin" transform="matrix(-1,0,0,-1,111.82126,108.29692)">
+</g>
+<g id="Layer_2_copy" class="st0">
+</g>
+<g id="em_thick" transform="matrix(-1,0,0,-1,111.82126,108.29692)">
+</g>
+<g id="Layer_2_copy_4" class="st0">
+	<g id="g3861" class="st1">
+		<rect id="rect3863" x="-286.1" y="320.7" class="st2" width="56.3" height="56.3"/>
+		<circle id="circle3865" class="st2" cx="-258" cy="348.8" r="28.2"/>
+	</g>
+	<g id="g3867" class="st1">
+		<rect id="rect3869" x="-221.7" y="320.7" class="st2" width="56.3" height="56.3"/>
+		<circle id="circle3871" class="st2" cx="-193.5" cy="348.8" r="28.2"/>
+	</g>
+	<g id="g3873" class="st1">
+		<rect id="rect3875" x="-158.5" y="320.7" class="st2" width="56.3" height="56.3"/>
+		<circle id="circle3877" class="st2" cx="-130.3" cy="348.8" r="28.2"/>
+	</g>
+</g>
+<rect id="rect3882" x="-245.5" y="497.4" transform="matrix(-0.7071 0.7071 -0.7071 -0.7071 -44.474 1024.2881)" class="st3" width="22.3" height="11.1"/>
+<rect id="rect3884" x="-210.1" y="462" transform="matrix(0.7071 -0.7071 0.7071 0.7071 -388.8625 -3.7341)" class="st3" width="22.3" height="11.1"/>
+<path id="path3886" inkscape:connector-curvature="0" class="st3" d="M-230.5,471.4c-3.2,3.2-3.2,8.6,0,11.8l15.8,15.7l11.8-11.8
+	l-15.7-15.7C-221.9,468.2-227.2,468.2-230.5,471.4z"/>
+<path id="path3888" inkscape:connector-curvature="0" class="st3" d="M-208.8,493.1c-4.3,4.3-4.3,11.4,0,15.7l15.7-15.7
+	C-197.4,488.8-204.5,488.8-208.8,493.1z"/>
+<path id="path3890" inkscape:connector-curvature="0" class="st4" d="M-207.1,516.3c5.7,5.7,15,5.7,20.7,0c5.7-5.7,5.7-15,0-20.7"/>
+<path id="path3892" inkscape:connector-curvature="0" class="st4" d="M-201.9,509.4c2.5,2.5,6.4,2.5,8.9,0c2.5-2.5,2.5-6.4,0-8.9"/>
+<line id="line3894" class="st5" x1="-226.5" y1="495" x2="-222.5" y2="491.1"/>
+<line id="line3896" class="st5" x1="-210.7" y1="479.3" x2="-206.8" y2="475.4"/>
+<g id="Layer_2_copy_2" class="st0">
+	<g id="g3905" class="st1">
+		<rect id="rect3907" x="-286.1" y="425.3" class="st2" width="56.3" height="56.3"/>
+		<circle id="circle3909" class="st2" cx="-258" cy="453.5" r="28.2"/>
+	</g>
+	<g id="g3911" class="st1">
+		<rect id="rect3913" x="-221.7" y="425.3" class="st2" width="56.3" height="56.3"/>
+		<circle id="circle3915" class="st2" cx="-193.5" cy="453.5" r="28.2"/>
+	</g>
+	<g id="g3917" class="st1">
+		<rect id="rect3919" x="-158.5" y="425.3" class="st2" width="56.3" height="56.3"/>
+		<circle id="circle3921" class="st2" cx="-130.3" cy="453.5" r="28.2"/>
+	</g>
+</g>
+<g id="hornet" transform="matrix(-1,0,0,-1,111.82126,108.29692)">
+</g>
+<g id="Layer_2_copy_5" class="st0">
+</g>
+<g id="hornet_THIN" transform="matrix(-1,0,0,-1,111.82126,108.29692)">
+</g>
+<g id="Layer_6" class="st0">
+	<polygon id="polygon3927" class="st6" points="-264.6,453.2 -269.5,453.2 -269.5,494.2 -246.6,494.2 -246.6,453.2 -251.5,453.2 
+		-251.5,446.7 -264.6,446.7 	"/>
+</g>
+</svg>
+        <div>
+          <span class="label">GPS</span>
+          <span class="v" id="gpsText">0 Sats</span>
+        </div>
+      </div>
+      <div class="indicator" id="rcIndicator" title="遥控信号">
+        <svg class="icon" id="rcIndicatorIcon" version="1.1"
+	 xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" xmlns:cc="http://creativecommons.org/ns#" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg" sodipodi:docname="gps.svg" inkscape:version="0.91 r13725"
+	 xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="-250 452 72 72"
+	 style="enable-background:new -250 452 72 72;" xml:space="preserve">
+<style type="text/css">
+	#rcIndicatorIcon .st0{display:none;}
+	#rcIndicatorIcon .st1{display:inline;}
+	#rcIndicatorIcon .st2{fill:none;stroke:#EB008B;stroke-width:0.25;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10;}
+	#rcIndicatorIcon .st3{display:inline;fill:none;stroke:#224A80;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10;}
+	#rcIndicatorIcon .st4{fill:none;stroke:#FFFFFF;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10;}
+	#rcIndicatorIcon .st5{fill:#FFFFFF;}
+	#rcIndicatorIcon .st6{fill:#FFFFFF;stroke:#FFFFFF;stroke-width:4;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10;}
+</style>
+<title  id="title4758">GPS</title>
+<sodipodi:namedview  inkscape:cy="55" bordercolor="#666666" showgrid="false" borderopacity="1" objecttolerance="10" guidetolerance="10" inkscape:cx="55" inkscape:zoom="11.136364" gridtolerance="10" pagecolor="#808080" inkscape:pageopacity="0" inkscape:pageshadow="2" inkscape:window-height="480" inkscape:current-layer="svg3852" inkscape:window-width="640" id="namedview3929">
+	</sodipodi:namedview>
+<g id="Layer_2" class="st0">
+</g>
+<g id="ex_thick" transform="matrix(-1,0,0,-1,111.82126,108.29692)">
+</g>
+<g id="Layer_2_copy_3" class="st0">
+</g>
+<g id="ex_thin" transform="matrix(-1,0,0,-1,111.82126,108.29692)">
+</g>
+<g id="Layer_2_copy" class="st0">
+</g>
+<g id="em_thick" transform="matrix(-1,0,0,-1,111.82126,108.29692)">
+</g>
+<g id="Layer_2_copy_4" class="st0">
+	<g id="g3861" class="st1">
+		<rect id="rect3863" x="-286.1" y="320.7" class="st2" width="56.3" height="56.3"/>
+		<circle id="circle3865" class="st2" cx="-258" cy="348.8" r="28.2"/>
+	</g>
+	<g id="g3867" class="st1">
+		<rect id="rect3869" x="-221.7" y="320.7" class="st2" width="56.3" height="56.3"/>
+		<circle id="circle3871" class="st2" cx="-193.5" cy="348.8" r="28.2"/>
+	</g>
+	<g id="g3873" class="st1">
+		<rect id="rect3875" x="-158.5" y="320.7" class="st2" width="56.3" height="56.3"/>
+		<circle id="circle3877" class="st2" cx="-130.3" cy="348.8" r="28.2"/>
+	</g>
+</g>
+<g id="Layer_2_copy_2" class="st0">
+	<g id="g3905" class="st1">
+		<rect id="rect3907" x="-286.1" y="425.3" class="st2" width="56.3" height="56.3"/>
+		<circle id="circle3909" class="st2" cx="-258" cy="453.5" r="28.2"/>
+	</g>
+	<g id="g3911" class="st1">
+		<rect id="rect3913" x="-221.7" y="425.3" class="st2" width="56.3" height="56.3"/>
+		<circle id="circle3915" class="st2" cx="-193.5" cy="453.5" r="28.2"/>
+	</g>
+	<g id="g3917" class="st1">
+		<rect id="rect3919" x="-158.5" y="425.3" class="st2" width="56.3" height="56.3"/>
+		<circle id="circle3921" class="st2" cx="-130.3" cy="453.5" r="28.2"/>
+	</g>
+</g>
+<g id="hornet" transform="matrix(-1,0,0,-1,111.82126,108.29692)">
+</g>
+<g id="Layer_2_copy_5" class="st0">
+</g>
+<g id="hornet_THIN" transform="matrix(-1,0,0,-1,111.82126,108.29692)">
+</g>
+<g id="Layer_6" class="st0">
+	<polygon id="polygon3927" class="st3" points="-264.6,453.2 -269.5,453.2 -269.5,494.2 -246.6,494.2 -246.6,453.2 -251.5,453.2 
+		-251.5,446.7 -264.6,446.7 	"/>
+</g>
+<line class="st4" x1="-214" y1="479.9" x2="-214" y2="459.8"/>
+<circle class="st5" cx="-227" cy="497" r="4.1"/>
+<path class="st6" d="M-237,481.9v30.3h46.8v-30.3H-237z M-227,505.7c-4.8,0-8.7-3.9-8.7-8.7s3.9-8.7,8.7-8.7c4.8,0,8.7,3.9,8.7,8.7
+	S-222.2,505.7-227,505.7z M-200.1,505.7c-4.8,0-8.7-3.9-8.7-8.7s3.9-8.7,8.7-8.7c4.8,0,8.7,3.9,8.7,8.7S-195.3,505.7-200.1,505.7z"
+	/>
+<circle class="st5" cx="-200.1" cy="497" r="4.1"/>
+</svg>
+        <div>
+          <span class="label">RC</span>
+          <span class="v" id="rcText">--%</span>
+        </div>
+      </div>
+      <div class="indicator" id="modeIndicator" title="飞行模式">
+        <svg class="icon" version="1.1"
+	 id="svg2474" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" xmlns:cc="http://creativecommons.org/ns#" xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#" xmlns:svg="http://www.w3.org/2000/svg" sodipodi:docname="airplane_topdown.svg" inkscape:version="0.46" inkscape:output_extension="org.inkscape.output.svg.inkscape" sodipodi:version="0.32"
+	 xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px" viewBox="78 206 72 72"
+	 style="enable-background:new 78 206 72 72;" xml:space="preserve">
+<style type="text/css">
+	.st0{fill:#FFFFFF;}
+</style>
+<path class="st0" d="M85.4,213.4l1.6,2.7l-8.6,9.2c-0.5,0.5-0.5,1.4,0,1.9l2.2,2.6c0.8,0.9,2.2,1.1,3.2,0.4l9.3-6.3l12.5,17.4
+	l-23.4,28.5c-0.5,0.6-0.6,1.5-0.2,2.2l0.7,1.3c0.9,1.5,2.1,2.8,3.6,3.8l0.9,0.6c0.8,0.5,1.7,0.4,2.4-0.2l25.5-23.9
+	c0.6-0.6,1.6-0.6,2.2,0l4.9,4.4l5.8,3.5l1.6-0.5l4,0.8l-0.7-4l0.5-1.6l-3.5-5.8l-4.4-4.9c-0.6-0.6-0.5-1.6,0-2.2l23.9-25.5
+	c0.6-0.7,0.7-1.6,0.2-2.4l-0.6-0.9c-0.9-1.5-2.2-2.7-3.8-3.6l-1.3-0.7c-0.7-0.4-1.6-0.3-2.2,0.2l-28.5,23.4L96,221.1l6.3-9.3
+	c0.7-1,0.5-2.4-0.4-3.2l-2.6-2.2c-0.6-0.5-1.4-0.5-1.9,0l-9.2,8.6C88.1,214.9,85.4,213.4,85.4,213.4z"/>
+</svg>
+        <div>
+          <span class="label">Mode</span>
+          <span class="v" id="modeText">—</span>
+        </div>
+      </div>
+      <div class="indicator" id="armedIndicator" title="解锁状态">
+        <svg class="icon" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 72 72" style="enable-background:new 0 0 72 72;" xml:space="preserve">
+<style type="text/css">
+	.st0{fill:#F0493C;stroke:#FFFFFF;stroke-width:5;stroke-miterlimit:10;}
+	.st1{fill:none;stroke:#FFFFFF;stroke-width:5;stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:10;}
+</style>
+<circle class="st0" cx="36" cy="36" r="32.4"/>
+<g>
+	<line class="st1" x1="21.6" y1="22.4" x2="50.4" y2="49.6"/>
+	<line class="st1" x1="22.4" y1="50.4" x2="49.6" y2="21.6"/>
+</g>
+</svg>
+        <div>
+          <span class="label">Armed</span>
+          <span class="v" id="armedText">Disarmed</span>
+        </div>
+      </div>
+      <div class="indicator" id="messageIndicator" title="MAVLink 消息 + 系统消息" style="cursor:pointer">
+        <svg class="icon" version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="-255 447 72 72" style="enable-background:new -255 447 72 72;" xml:space="preserve">
+<style type="text/css">
+	.st0{fill:#FFFFFF;}
+</style>
+<g>
+	<path class="st0" d="M-240.7,462.4c-7.9,0-14.3,6.4-14.3,14.3s6.4,14.3,14.3,14.3c1.3,0,2.4-1,2.6-2.2h0V465
+		C-238.1,463.6-239.3,462.4-240.7,462.4z"/>
+	<path class="st0" d="M-183,450.8c0-1.4-1.2-2.6-2.6-2.6c-0.6,0-1.1,0.2-1.6,0.5l-22.9,13.2h-20.6c-1.4,0-2.6,1.2-2.6,2.6v24.7h0
+		c0.2,1.3,1.2,2.3,2.6,2.3h18.3l25,14.5c0.5,0.4,1.1,0.7,1.8,0.7c1.4,0,2.6-1.2,2.6-2.6c0-0.1,0-0.2,0-0.3h0v-4.4v-44.1v-4.4h0
+		C-183,450.9-183,450.8-183,450.8z"/>
+	<path class="st0" d="M-213.1,511.3L-213.1,511.3c0-0.1-0.1-0.1-0.1-0.1c0,0,0,0,0-0.1l-7.9-13.8l0,0c-0.4-0.6-1.1-1-1.8-1v0h-6.9v0
+		c-0.4,0-0.7,0.1-1.1,0.3c-1.2,0.7-1.7,2.3-1,3.6c0.1,0.1,0.1,0.2,0.2,0.3l0,0l9.3,16c0,0,0,0,0,0c0,0,0,0,0,0l0.1,0.2l0,0
+		c0.8,1.1,2.3,1.5,3.4,0.8c0.1-0.1,0.3-0.2,0.4-0.3l0,0l4.8-2.8l0,0C-212.8,513.7-212.5,512.4-213.1,511.3L-213.1,511.3z"/>
+</g>
+</svg>
+        <div>
+          <span class="label">Messages</span>
+          <span class="v" id="messageText">0</span>
+        </div>
+      </div>
+      <button class="tb-connect" id="tbConnect">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M5 12 L19 12 M12 5 L12 19 M8 8 L4 12 L8 16 M16 8 L20 12 L16 16"/>
+        </svg>
+        <span id="tbConnectText">Connect</span>
+      </button>
+      <span id="mavRate" class="mav-rate"></span>
+    </div>
+  </header>
+
+  <!-- ==================== 主区 ==================== -->
+  <main class="main">
+    <!-- 左侧 ToolStrip -->
+    <aside class="toolstrip" id="toolstrip">
+      <!-- 由 JS 注入按钮 -->
+    </aside>
+
+    <!-- 内容区 (Fly / Plan / Analyze / Setup) -->
+    <section id="view" class="viewport"></section>
+  </main>
+</div>
+
+<!-- Connect popup 容器 -->
+<div id="popupHost"></div>
+
+<script>
+  // 注册地图瓦片缓存 Service Worker (QGC 磁盘缓存的浏览器等价物, 详见 sw.js)。
+  // 仅 localhost/https 生效; 注册失败自动降级为无缓存, 不影响页面功能。
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').catch(function () {});
+    });
+  }
+</script>
+<script type="module" src="src/app.js"></script>
+</body>
+</html>
