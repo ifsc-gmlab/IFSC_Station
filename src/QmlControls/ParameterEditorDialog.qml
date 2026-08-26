@@ -50,6 +50,9 @@ QGCViewDialog {
             hideDialog();
         } else if (factCombo.visible && !manualEntry.checked) {
             fact.enumIndex = factCombo.currentIndex
+            if (fact.name === "IFSC_DIST_SW") {
+                console.log("[IFSC] IFSC_DIST_SW = " + fact.enumIndex + " (" + fact.enumStringValue + ")")
+            }
             valueChanged()
             hideDialog()
         } else {

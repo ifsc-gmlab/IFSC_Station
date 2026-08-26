@@ -40,6 +40,9 @@ Item {
         QGCTabButton {
             text:       qsTr("Position Controller")
         }
+        QGCTabButton {
+            text:       qsTr("IFSC Controller")
+        }
         onCurrentIndexChanged: {
             if (typeof loader.item.autotuningEnabled !== "undefined") {
                 _autotuningEnabled = loader.item.autotuningEnabled;
@@ -51,7 +54,8 @@ Item {
         "PX4TuningComponentCopterRate.qml",
         "PX4TuningComponentCopterAttitude.qml",
         "PX4TuningComponentCopterVelocity.qml",
-        "PX4TuningComponentCopterPosition.qml"
+        "PX4TuningComponentCopterPosition.qml",
+        "PX4TuningComponentCopterIFSC.qml"
     ]
 
     Loader {

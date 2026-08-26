@@ -18,6 +18,7 @@
         <file alias="PX4TuningComponentCopterRate.qml">../../AutoPilotPlugins/PX4/PX4TuningComponentCopterRate.qml</file>
         <file alias="PX4TuningComponentCopterVelocity.qml">../../AutoPilotPlugins/PX4/PX4TuningComponentCopterVelocity.qml</file>
         <file alias="PX4TuningComponentCopterPosition.qml">../../AutoPilotPlugins/PX4/PX4TuningComponentCopterPosition.qml</file>
+        <file alias="PX4TuningComponentCopterIFSC.qml">../../AutoPilotPlugins/PX4/PX4TuningComponentCopterIFSC.qml</file>
         <file alias="PX4TuningComponentPlane.qml">../../AutoPilotPlugins/PX4/PX4TuningComponentPlane.qml</file>
         <file alias="PX4TuningComponentPlaneAll.qml">../../AutoPilotPlugins/PX4/PX4TuningComponentPlaneAll.qml</file>
         <file alias="PX4TuningComponentPlaneTECS.qml">../../AutoPilotPlugins/PX4/PX4TuningComponentPlaneTECS.qml</file>
