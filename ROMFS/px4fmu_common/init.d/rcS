@@ -577,6 +577,10 @@ else
 
 	payload_deliverer start
 
+	# IFSC-Station placeholder: start the param_control module so it touches
+	# IFSC_DIST_SW, making the parameter "used" and visible to param show.
+	param_control start
+
 	if param compare -s ICE_EN 1
 	then
 		internal_combustion_engine_control start
