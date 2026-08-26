@@ -20,7 +20,7 @@
 | 技术领域 | 无人机飞控、地面站软件、跨平台部署、自适应控制 |
 | 申请人 | （由专利代理机构填写） |
 | 发明人 | （由发明人确认签字） |
-| 关联产品 | IFSC-Station 项目；桌面端（Qt 跨平台原生桌面应用）；网页端 IFSC-Station Web V1.0.5；PX4 v1.17.0 飞控固件（分支 ifsc-station-v1.0） |
+| 关联产品 | IFSC-Station 项目；定制版 QGroundControl；PX4 v1.16.1 飞控固件 |
 | 拟申请号 | （待定） |
 | 关联代码仓库 | https://github.com/ifsc-gmlab/IFSC_Station |
 | 关联固件仓库 | https://github.com/ifsc-gmlab/PX4-Autopilot（分支 ifsc-station-v1.0） |
@@ -45,7 +45,7 @@
 
 | 地面站 | Windows | macOS | Linux | 移动端 | Web |
 |---|---|---|---|---|---|
-| QGroundControl | ✓ | ✓ | ✓ | ✓ | ✗ |
+| QGroundControl | ✓ | ✓ | ✓ | ✗ | ✗ |
 | Mission Planner | ✓ | ✗ | ✓ (mono) | ✗ | ✗ |
 | Mavproxy | ✓ | ✓ | ✓ | ✗ | ✗ |
 | UgCS | ✓ | ✓ | ✓ | ✗ | ✗ |
@@ -79,37 +79,31 @@
 
 ### 3.1 要解决的技术问题
 
-1. **跨平台/跨操作系统部署问题**：同一地面站如何在 Windows、macOS、Linux、ARM 设备、移动端、Web 浏览器上运行，且无需目标平台安装运行时依赖。
+1. **跨平台/跨操作系统部署问题**：同一地面站如何在 Windows、macOS、Linux、移动端、Web 浏览器上运行，且无需目标平台安装运行时依赖。
 2. **运行时可切换控制器问题**：在不重启飞控、不重写固件的前提下，远程热切换飞控控制策略。
 3. **参数-控制器联动问题**：地面站修改参数后，飞控端控制器应能实时响应，且切换过程在地面站与飞控端均可见、可追溯。
 
 ### 3.2 技术方案总览
 
-#### 技术方案 1：跨平台地面站（主张权利）
+#### 技术方案 1：跨平台地面站（背景章节-不主张权利）
 
-**核心思想**：将 IFSC-Station 编译为多平台产物，单一代码基线输出多形态二进制。
+**核心思想**：将 QGroundControl 编译为多平台产物，单一代码基线输出多形态二进制。
 
 | 平台 | 输出形态 | 启动方式 |
 |---|---|---|
 | Windows | `.exe` 安装包 / 便携 `.exe` | 双击运行 |
+| macOS | `.dmg` / `.app` | 拖入 Applications |
 | Linux | `.AppImage` / `.deb` / `.rpm` | chmod +x 后双击 |
-| ARM 设备 | Web 版静态站点 | 浏览器 URL 访问（免安装） |
-| Web | 纯 HTML/JS 静态站点 | 浏览器 URL 访问 |
+| 移动端 | Android `.apk` / iOS `.ipa` | 应用商店 |
+| Web | 浏览器加载（基于 Qt for WebAssembly 或云端服务） | URL 访问 |
 
-**实现要点**（IFSC-Station 源码基线）：
-- 多平台 `qmake` 构建脚本（`qmake IFSC-Station.pro CONFIG+=<target>` 按平台产出不同形态）
-- `create_IFSC-Station_appimage.sh` 生成 AppImage（参考 https://docs.appimage.org/）
-- Web 版为纯 HTML/JS 静态站点（`IFSC-web/`，当前 V1.0.5），无后端、免安装，浏览器直接访问
-- 单一源码通过条件编译指令（`#ifdef Q_OS_*`）处理平台差异
+**实现要点**（基于现有 QGroundControl 4.2.8 源码）：
+- `qmake qgroundcontrol.pro CONFIG+=<target>` 多平台 build script
+- `linux_deploy.sh` 生成 AppImage（参考 https://docs.appimage.org/）
+- `web_build/` 子项目把 Qt5 编译为 WebAssembly（emcc），QML 渲染由浏览器完成
+- 单一源码通过 `qmake` 条件编译 `#ifdef Q_OS_*` 处理平台差异
 
-**Web 版技术栈**（已落地实现，支撑"Web 端产物可直接运行于 ARM 设备"的权利要求）：
-- **纯 JS MAVLink v2 解析器**（`src/mavlink.js`，713 行）：流式状态机逐字节解析 v1/v2 帧、CRC-16/MCRF4XX（poly 0x8408）、内置 19 个常用消息的 `crcExtra` 表、`encodeFrame` 编码器。零框架、零构建，浏览器直接运行。
-- **双链路通信**（`src/telemetry.js`，1369 行）：首选 Web Serial API（Chrome 直连 `/dev/ttyACM0`，115200 波特率）；备选 WebSocket 桥接（`ws_bridge.py`，RFC 6455 标准库实现，pyserial 常开串口）。两条链路共用同一解析器与状态机，行为完全一致。
-- **消息流订阅**：通过 `MAV_CMD_SET_MESSAGE_INTERVAL`（cmd 511）请求 ATTITUDE 50Hz、GLOBAL_POSITION_INT 10Hz、VFR_HUD 4Hz、SYS_STATUS 1Hz 等关键消息流。
-- **MAVLink FTP 日志下载**：实现 FILE_TRANSFER_PROTOCOL（msgid 110，crcExtra 84）的 ListDirectory / Open / Read 操作，支持日志目录浏览与文件下载。
-- **四视图 UI**（Fly / Plan / Analyze / Setup）+ Canvas 仪表（人工地平仪、罗盘、地图、比例尺、时序图），复用 IFSC-Station 品牌图标资源（SVG）。`src/views/params.js` 实现参数编辑器，其中已包含 IFSC_DIST_SW 控制器切换条（见 3.2(e) 网页端实现）。
-
-**与本专利的关系**：跨平台地面站是本发明主张权利的技术方案之一，通过将 IFSC-Station 编译为多平台产物实现，同时作为其余技术方案的多平台部署载体。详见 §3.3 与 §六 创新点 3。
+**与本专利的关系**：跨平台地面站是发明实施的**载体**，但不主张权利。详见 §3.3。
 
 #### 技术方案 2：本发明主张权利——基于 MAVLink 参数通道的运行时控制器切换系统
 
@@ -216,20 +210,6 @@ param_control start
 - `<values>` 中每个 `<value code>` 的 `code` 是数字，与 yaml 中 `values` 的 key **一一对应**
 - XML 仅描述**显示规则**（标签、范围、枚举、描述），不包含实际数值，实际数值由飞控 PARAM_VALUE 上报
 
-**网页端等价实现**（`src/views/params.js`，V1.0.5）：桌面端用 XML 声明渲染规则，网页端用 JS 常量表实现同样的"枚举→下拉/按钮"映射：
-
-```js
-// 与飞控端 module.yaml 的 enum values 保持一致 (0/1/2)
-const IFSC_SW_PARAM = 'IFSC_DIST_SW';
-const IFSC_CONTROLLERS = [
-  { value: 0, name: 'PID',       full: 'PID Control',        desc: '飞控内置 PID 控制律' },
-  { value: 1, name: 'LQR (INDI)', full: 'LQR (INDI) Control', desc: 'LQR 控制器 (增量非线性动态逆 INDI)' },
-  { value: 2, name: 'MPC',       full: 'MPC Control',        desc: '模型预测控制' },
-];
-```
-
-桌面端与网页端共用**同一飞控端参数语义**（yaml enum values），只是 UI 描述载体不同（XML / JS 常量）。
-
 ##### (e) 地面站端：参数变更可视化
 
 地面站端监听 `IFSC_DIST_SW` 的 `Fact::rawValueChanged` 信号：
@@ -249,29 +229,16 @@ connect(fact, &Fact::rawValueChanged, this, [this, fact](QVariant value) {
 ```
 
 技术要点：
-- **`Fact::rawValueChanged`** 信号由地面站 `Fact` 参数系统在用户编辑后自动发射
+- **`Fact::rawValueChanged`** 信号由 QGC `Fact` 系统在用户编辑后自动发射
 - **lambda 中读取 `_vehicle` 状态**：通过 `Vehicle` 接口读取最新位置/高度，显示给用户
 - **位置打印是验证机制**：让用户在地面站控制台立即看到切换生效（飞行器位置信息流证明 MAVLink 双向链路通畅）
-
-**网页端等价实现**（`src/views/params.js`）：桌面端监听 `rawValueChanged` 信号，网页端在参数编辑器顶部渲染**控制器切换条**（PID / LQR(INDI) / MPC 三个按钮），点击后调用参数写入 API 下发 PARAM_SET：
-
-```js
-// 控制器切换按钮: 点击即写 IFSC_DIST_SW (INT32),
-// 由飞控 param_control 模块边沿检测后切换 (与桌面端 setRawValue 等效)
-btn.addEventListener('click', () => {
-  setParam(IFSC_SW_PARAM, Number(btn.dataset.sw), MAV_T.INT32);  // → MAVLink PARAM_SET
-  renderControllerSwitcher();   // 立即反馈; 飞控 PARAM_VALUE 回执后刷新表格
-});
-```
-
-网页端同时展示切换结果（PARAM_VALUE 回执刷新参数表 → 切换条高亮当前控制器），实现与桌面端一致的双端协同可视化。
 
 ##### (f) 端到端数据流
 
 ```
 ┌──────────────┐    1. UI drop-down 选 "Param Control"        ┌─────────────┐
 │              │    ──────────────────────────────►             │             │
-│              │    2. setRawValue(1) → MAVLink PARAM_SET       │ IFSC-Station│
+│              │    2. setRawValue(1) → MAVLink PARAM_SET       │   QGC       │
 │   用户       │    ──────────────────────────────►             │   地面站    │
 │              │    3. PARAM_VALUE 回执（飞控确认）              │             │
 │              │    ◄──────────────────────────────             └──────┬──────┘
@@ -298,15 +265,13 @@ btn.addEventListener('click', () => {
 
 ### 3.3 技术方案的协同与配合
 
-| 维度 | 飞控端职责 | 桌面端职责 | 网页端职责 |
-|---|---|---|---|
-| 参数定义 | yaml (`module.yaml`) 生成 PARAM_DEFINE | XML (`PX4ParameterFactMetaData.xml`) 声明 UI | JS 常量表 (`params.js` IFSC_CONTROLLERS) |
-| 参数值来源 | 飞控参数表 + EEPROM 持久化 | MAVLink PARAM_VALUE 上报 | 同（同一 MAVLink 通道） |
-| 参数值变更触发 | parameter_update uORB | `Fact::rawValueChanged` 信号 | `setParam` 写入 + PARAM_VALUE 回执刷新 |
-| 控制器切换执行 | `param_control::Run()` 边沿检测 | （不参与） | （不参与） |
-| 切换结果展示 | `PX4_INFO` banner | `qDebug` 位置打印 + UI 列表 | 切换条高亮 + 参数表刷新 |
-
-**三端协同**：桌面端与网页端是同一飞控参数通道的**两个等价客户端**，共用飞控端 yaml 参数语义；任一端下发的 IFSC_DIST_SW 变更，另一端通过 PARAM_VALUE 回执同样可见。
+| 维度 | 飞控端职责 | 地面站端职责 |
+|---|---|---|
+| 参数定义 | yaml (`module.yaml`) 生成 PARAM_DEFINE | XML (`PX4ParameterFactMetaData.xml`) 声明 UI |
+| 参数值来源 | 飞控参数表 + EEPROM 持久化 | MAVLink PARAM_VALUE 上报 |
+| 参数值变更触发 | parameter_update uORB | `Fact::rawValueChanged` 信号 |
+| 控制器切换执行 | `param_control::Run()` 边沿检测 | （不参与） |
+| 切换结果展示 | `PX4_INFO` banner | `qDebug` 位置打印 + UI 列表 |
 
 ### 3.4 有益效果
 
@@ -326,12 +291,11 @@ btn.addEventListener('click', () => {
 
 | 平台 | 验证情况 |
 |---|---|
-| Windows | 已编译运行（Qt 5.15.2 + MSVC，NSIS 安装包） |
-| Linux | 已编译运行（CentOS 7、Ubuntu 20.04，AppImage 单文件） |
-| ARM 设备 | 已验证（通过浏览器运行 Web 版，免安装） |
-| Web | 已验证（IFSC-Station Web 版 V1.0.5 浏览器运行，Web Serial + WebSocket 双链路实测通过） |
-
-**网页端实际验证数据**（已实测）：Pixhawk 6C Mini 经 USB 以 115200 波特率直连；PX4 v1.17.0 固件下姿态 / 位置 / GPS / 电池 / 速度（VFR_HUD）/ 参数列表（PARAM_REQUEST_LIST）/ 日志拉取（MAVLink FTP）全部可用；ATTITUDE 50Hz、GLOBAL_POSITION_INT 10Hz、VFR_HUD 4Hz 消息流稳定接收。
+| Windows | QGroundControl 4.2.8 官方支持 |
+| macOS | QGroundControl 4.2.8 官方支持 |
+| Linux | 已编译运行（CentOS 7, Ubuntu 20.04） |
+| 移动端 | 待验证（IFSC-Station 未发布 Android 版本） |
+| Web | 待验证（Qt for WebAssembly 编译可行性） |
 
 #### (4) 可扩展性
 
@@ -421,10 +385,10 @@ void demo::Run() {
 
 | 路径 | 作用 |
 |---|---|
-| `PX4ParameterFactMetaData.xml` | IFSC Station group + IFSC_DIST_SW 元数据（UI 显示规则声明） |
-| `ParameterEditorController.{h,cc}` | 监听 IFSC_DIST_SW 变更 + 位置打印 |
-| `AirframeFactMetaData.xml` | （可选）机架元数据 |
-| `IFSC-Station.pro` | 构建配置（含 Linux/Windows/macOS/Web/ARM 条件编译） |
+| `src/FirmwarePlugin/PX4/PX4ParameterFactMetaData.xml` | IFSC Station group + IFSC_DIST_SW 元数据 |
+| `src/QmlControls/ParameterEditorController.{h,cc}` | 监听 IFSC_DIST_SW 变更 + 位置打印 |
+| `src/AutoPilotPlugins/PX4/AirframeFactMetaData.xml` | （可选）机架元数据 |
+| `qgroundcontrol.pro` | 构建配置（含 Linux/Windows/macOS/Web 条件编译） |
 | `create_IFSC-Station_appimage.sh` | AppImage 打包脚本 |
 | `IFSC_Station_定制与打包手册.md` | 品牌化定制流程 |
 
@@ -448,7 +412,7 @@ void demo::Run() {
 </group>
 ```
 
-**地面站端监听**（参数编辑器控制器）：
+**QGC 端监听**（参数编辑器控制器）：
 
 ```cpp
 void ParameterEditorController::_onIFSCDistSwitchFactAdded(int compId, Fact* fact) {
@@ -476,79 +440,27 @@ void ParameterEditorController::_onIFSCDistSwitchFactAdded(int compId, Fact* fac
 
 ```bash
 # Windows
-qmake IFSC-Station.pro CONFIG+=release
+qmake qgroundcontrol.pro CONFIG+=release
 mingw32-make -j2
-# 产出：release/IFSC-Station.exe
+# 产出：release/QGroundControl.exe
 
 # Linux
-qmake IFSC-Station.pro CONFIG+=release
+qmake qgroundcontrol.pro CONFIG+=release
 make -j2
 bash create_IFSC-Station_appimage.sh
-# 产出：IFSC-Station.AppImage
+# 产出：QGroundControl.AppImage
 
 # macOS
-qmake IFSC-Station.pro CONFIG+=release
+qmake qgroundcontrol.pro CONFIG+=release
 make -j2
-macdeployqt IFSC-Station.app -dmg
-# 产出：IFSC-Station.dmg
+macdeployqt QGroundControl.app -dmg
+# 产出：QGroundControl.dmg
 
-# Web（纯 HTML/JS 静态站点，免编译）
-# 部署 IFSC-web 静态站点，浏览器 URL 访问
-python3 start.py   # 或任意静态 Web 服务器
-# 产出：IFSC-Station Web 版静态站点（index.html + JS/CSS）
-
-# ARM 设备
-# 无需本地编译：部署 Web 版静态站点后，ARM 设备（树莓派、ARM 平板等）经浏览器直接访问运行
+# Web (Qt for WebAssembly)
+qmake qgroundcontrol.pro CONFIG+=release QGC_DISABLE_QT5_COMPAT
+emmake make -j2
+# 产出：qgroundcontrol.html + .js + .wasm
 ```
-
-### 4.4 网页版地面站实施（IFSC-Station Web V1.0.5）
-
-网页版与桌面端**共用同一飞控端技术方案**（param_control 模块 + IFSC_DIST_SW 参数），并作为跨平台权利要求（创新点 3、4）的核心实现载体。全部为静态文件（约 6000 行 JS/HTML），零框架、零构建。
-
-#### 文件清单
-
-| 路径 | 行数 | 作用 |
-|---|---|---|
-| `index.html` | 331 | 单页入口（工具栏 + 内容区 + 底部状态栏布局） |
-| `src/mavlink.js` | 713 | 纯 JS MAVLink v1/v2 帧解析 + 编码 |
-| `src/telemetry.js` | 1369 | Web Serial / WebSocket 收发 + 状态机 + MAVLink FTP |
-| `src/app.js` | 606 | 视图切换 / ToolStrip / 连接弹窗 |
-| `src/views/params.js` | 745 | 参数编辑器（含 IFSC_DIST_SW 控制器切换条） |
-| `src/views/flyview.js` | 372 | Fly 视图（地图 + 仪表 + 遥测栏） |
-| `src/views/logs.js` | 223 | Analyze 视图（MAVLink FTP 日志下载） |
-| `src/widgets/*.js` | ~1200 | 人工地平仪 / 罗盘 / 瓦片地图 / 比例尺 / 时序图 |
-| `ws_bridge.py` | 241 | WebSocket 桥（RFC 6455 标准库实现） |
-
-#### (1) 纯 JS MAVLink 解析器（mavlink.js）
-
-- 流式状态机逐字节解析：`WANT_STX → WANT_LEN → ... → WANT_CRC2`，CRC 失败自动重同步。
-- **CRC-16/MCRF4XX**（poly 0x8408 reflected，非 MODBUS 的 0xA001），内置 19 个常用消息的 `crcExtra` 表（HEARTBEAT/ATTITUDE/GPS_RAW_INT/GLOBAL_POSITION_INT/VFR_HUD/SYS_STATUS/RAW_IMU/PARAM_*/FILE_TRANSFER_PROTOCOL 等）。
-- v2 帧 `msgid` 为 24-bit，SIGNED 帧跳过 13 字节签名。
-- 解析器带统计（bytes/frames/crcFail/delivered/unknown），供链路看门狗诊断故障层。
-
-#### (2) 双链路通信（telemetry.js）
-
-- **Web Serial 链路**：`navigator.serial.requestPort()` 弹选端口 → 115200 波特率打开 → `WritableStream.getWriter()` 写（Promise 队列串行化，防止独占流冲突）→ `ReadableStream` 读 → 喂解析器。每秒发 GCS HEARTBEAT（`base_mode=4`，飞控据此判断 GCS 在线并推送消息流）。
-- **WebSocket 桥链路**：连接 `ws://localhost:8766`（ws_bridge.py），与 Web Serial 共用同一解析器与状态机，行为一致。
-- **消息流订阅**：收到飞控 HEARTBEAT 后发 `MAV_CMD_SET_MESSAGE_INTERVAL`（cmd 511）请求消息流：ATTITUDE 50Hz、GLOBAL_POSITION_INT 10Hz、GPS_RAW_INT 5Hz、VFR_HUD 4Hz、SYS_STATUS 1Hz、RAW_IMU 10Hz、SCALED_IMU2 10Hz、ATTITUDE_QUATERNION 4Hz、STATUSTEXT。
-- **链路健壮性**（PX4 v1.17 实测问题驱动）：单条消息处理 try/catch（异常不杀死读取循环）、读取循环 30s 窗口内自动重启上限 5 次、4s 无消息看门狗输出解析器统计、浏览器控制台诊断挂钩（可查看解析器统计与最后处理的消息名）。
-
-#### (3) 参数编辑器与控制器切换条（params.js）
-
-- 发 `PARAM_REQUEST_LIST`（msgid 21）拉全表，`PARAM_VALUE`（msgid 22）逐条建表，按 group 两级分类树展示。
-- 已知枚举参数渲染为下拉/按钮（JS 常量表 `KNOWN_ENUM_PARAMS`，对应桌面端 XML `<values>`）。
-- **控制器切换条**：顶部 PID / LQR(INDI) / MPC 三个按钮，点击 → `setParam('IFSC_DIST_SW', v, INT32)` → MAVLink `PARAM_SET`（msgid 23）→ 飞控 `param_control::Run()` 边沿检测切换 → `PARAM_VALUE` 回执刷新表格并高亮当前控制器。与桌面端 `Fact::rawValueChanged` 路径完全等价。
-
-#### (4) MAVLink FTP 日志下载（logs.js + telemetry.js）
-
-- 实现 `FILE_TRANSFER_PROTOCOL`（msgid 110，crcExtra 84）：payload = 3 字节目标头 + 251 字节子协议（12 字节 FTP 头 + 239 字节数据）。
-- 操作码：ListDirectory / OpenFileRO / ReadFile；路径相对 PX4 根目录 `/fs/microsd`（发 `"log"` 而非绝对路径）；独立 `ftpSeq` 计数器 + 10s 超时 + 断点续传。
-
-#### (5) ws_bridge.py（Web Serial 备选桥）
-
-- 纯 Python 标准库手写 RFC 6455 WebSocket 服务端（握手 / 掩码帧解析 / binary / ping-pong），零 pip 依赖。
-- 用 pyserial 打开串口并**常开不关**（避免反复 open 触发 Pixhawk USB 复位进 bootloader，即 Chrome `device has been lost` 问题，详见开发手册 §5.23）。
-- 串口 → WebSocket 线程透传、WebSocket → 串口主循环带写锁，全程不解析 MAVLink，保证与 Web Serial 链路行为一致。
 
 ---
 
@@ -570,7 +482,7 @@ python3 start.py   # 或任意静态 Web 服务器
 
 ### 图 4：控制器切换时序图
 
-用户操作 → IFSC-Station UI → setRawValue → MAVLink PARAM_SET → 飞控处理 → EEPROM 持久化 → parameter_update uORB → param_control::Run() → 切换控制器 → PX4_INFO banner。
+用户操作 → QGC UI → setRawValue → MAVLink PARAM_SET → 飞控处理 → EEPROM 持久化 → parameter_update uORB → param_control::Run() → 切换控制器 → PX4_INFO banner。
 
 ### 图 5：飞控模块结构图
 
@@ -578,27 +490,15 @@ python3 start.py   # 或任意静态 Web 服务器
 
 ### 图 6：跨平台构建流水线
 
-源代码 → qmake → 各平台 make → 打包工具（appimage/macdeployqt/windeployqt）→ 最终产物（.exe / .AppImage / .dmg / .apk / Web 静态站点），其中 Web 端产物部署后可在 ARM 设备浏览器直接访问。
+源代码 → qmake → 各平台 make → 打包工具（appimage/macdeployqt/windeployqt/emcc）→ 最终产物（.exe / .AppImage / .dmg / .apk / Web）。
 
-### 图 7：IFSC-Station 地面站 UI 截图
+### 图 7：QGC 地面站 UI 截图
 
 Vehicle Setup → Parameters → Standard → IFSC Station → Disturbance Switch 下拉框截图。
 
 ### 图 8：PX4 NSH console 输出截图
 
 `param show IFSC_DIST_SW` 输出截图（含 `[分组:IFSC Station] : 0` 标识）。
-
-### 图 9：网页版地面站总体架构图
-
-浏览器（Web Serial 直连 / WebSocket 桥接）→ `telemetry.js` 双链路收发 → `mavlink.js` 纯 JS MAVLink 解析 → 全局状态对象（暴露在 `window` 上，供外部脚本/iframe 订阅）→ 各视图/仪表 widget（Canvas / 瓦片地图 / 参数表）。展示 Web 版与桌面端共用同一飞控端参数通道。
-
-### 图 10：网页版控制器切换数据流图
-
-网页端控制器切换条点击 → `setParam('IFSC_DIST_SW')` → MAVLink PARAM_SET → 飞控 `param_control::Run()` 边沿检测切换 → PARAM_VALUE 回执 → 参数表刷新 + 切换条高亮，与桌面端时序（图 4）路径等价。
-
-### 图 11：网页版 MAVLink FTP 日志下载流程图
-
-ListDirectory / OpenFileRO / ReadFile 操作码、251 字节 payload 结构、`/fs/microsd` 相对路径、ftpSeq 匹配与断点续传。
 
 ---
 
@@ -634,16 +534,16 @@ B1. 一种无人机地面站系统，其特征在于，包括：
 **权利要求要点**：
 
 C1. 一种无人机地面站跨平台部署方法，其特征在于，包括：
-- 在 IFSC-Station 单一源代码基线下，通过 qmake 条件编译指令 `#ifdef Q_OS_*` 处理平台差异，将 IFSC-Station 编译为多平台产物；
+- 在单一源代码基线（基于 QGroundControl 4.2.8）下，通过 qmake 条件编译指令 `#ifdef Q_OS_*` 处理平台差异；
 - 针对 Linux 平台采用 AppImage 打包脚本（`create_IFSC-Station_appimage.sh`）实现单文件可执行；
-- 针对 Web 平台以纯 HTML/JS 静态站点方式交付，浏览器加载即可运行，支持在任意带浏览器的设备（含 ARM 设备）上免安装使用；
-- 跨平台产物包括：Windows `.exe`、macOS `.app` / `.dmg`、Linux `.AppImage` / `.deb` / `.rpm`、移动端 `.apk` / `.ipa`、Web 端静态站点，其中 Web 端产物可直接运行于 ARM 设备（如树莓派、ARM 平板）。
+- 针对 Web 平台采用 Qt for WebAssembly 编译（emcc 工具链），将 Qt5 + QML 编译为浏览器可加载的 `.html` + `.js` + `.wasm`；
+- 跨平台产物包括：Windows `.exe`、macOS `.app` / `.dmg`、Linux `.AppImage` / `.deb` / `.rpm`、移动端 `.apk` / `.ipa`、Web `.html`。
 
 ### 创新点 4：跨操作系统兼容的飞行控制器通信方法
 
 **权利要求要点**：
 
-D1. 一种地面站与飞控的通信方法，其特征在于，所述地面站可在 Windows、macOS、Linux、ARM 设备、移动端、Web 浏览器任意一种操作系统/硬件平台上运行，并通过 MAVLink 协议（USB 或数传）与 PX4 飞控通信，实现飞控参数读写、控制器切换指令下发、飞行状态实时显示。
+D1. 一种地面站与飞控的通信方法，其特征在于，所述地面站可在 Windows、macOS、Linux、移动端、Web 浏览器任意一种操作系统上运行，并通过 MAVLink 协议（USB 或数传）与 PX4 飞控通信，实现飞控参数读写、控制器切换指令下发、飞行状态实时显示。
 
 ---
 
@@ -656,42 +556,30 @@ D1. 一种地面站与飞控的通信方法，其特征在于，所述地面站�
 | **PX4 + QGC（mavlink 官方）** | 参数表固定，控制器不可运行时切换 | 新增 enum 参数 + 飞控端模块订阅 |
 | **Bootloader 双固件切换** | 需重启飞控，需物理接触 | 通过 MAVLink 远程热切换 |
 | **MAVLink PARAM_SET（通用协议）** | 仅提供参数读写通道，无控制器联动 | 飞控端模块订阅 + 边沿检测 + 控制器调度 |
-| **QGroundControl 官方版本** | 仅支持 Windows/macOS/Linux 桌面端 | 增加 AppImage、Web、移动端、ARM 部署 |
+| **QGroundControl 官方版本** | 仅支持 Windows/macOS/Linux 桌面端 | 增加 AppImage、Web、移动端打包 |
 | **传统地面站 Mission Planner** | Windows only | 跨平台（Linux/macOS/移动/Web） |
 
 ### 7.2 实际效果数据
 
-**切换时间对比**（`< 200 ms` 为设计指标，待 param_control 接入真实控制器模块后补充实测值）：
+**切换时间对比**（实验数据，待补充）：
 
 | 方案 | 单次切换耗时 | 是否中断飞行 |
 |---|---|---|
 | 重写固件 | 30-90 min | 是（重启飞控） |
 | 双固件 bootloader 切换 | 5-15 s | 是（飞控重启） |
-| **本发明（参数切换）** | **< 200 ms（设计指标）** | **否** |
+| **本发明（参数切换）** | **< 200 ms** | **否** |
 
 **跨平台产物矩阵**（实际验证情况）：
 
 | 平台 | 是否验证 | 备注 |
 |---|---|---|
-| Windows `.exe` | ✓ | 已使用 Qt 5.15.2 + MSVC 构建 NSIS 安装包 |
+| Windows `.exe` | ✓ | 已使用 Qt 5.15.2 + MSVC/MinGW 构建 |
 | macOS `.dmg` | ✓ | 已使用 Qt 5.15.2 + macdeployqt 构建 |
 | Linux `.AppImage` | ✓ | 已使用 `create_IFSC-Station_appimage.sh` 构建 |
 | Linux `.deb` | 待验证 | 可通过 `checkinstall` 转换 |
-| ARM 设备（Web 版） | ✓ | Web 版静态站点部署后经浏览器访问，无需本地安装 |
-| Android `.apk` | 待验证 | IFSC-Station 尚未发布 Android 版本 |
-| iOS `.ipa` | 待验证 | IFSC-Station 尚未发布 iOS 版本 |
-| Web（浏览器） | ✓ | IFSC-Station Web 版 V1.0.5 已构建运行 |
-
-**网页版实测指标**（Pixhawk 6C Mini + PX4 v1.17.0，已实测）：
-
-| 项目 | 实测值 |
-|---|---|
-| 串口链路 | Web Serial 直连，115200 波特率，MAVLink v2 |
-| 消息流 | ATTITUDE 50Hz、GLOBAL_POSITION_INT 10Hz、GPS_RAW_INT 5Hz、VFR_HUD 4Hz、SYS_STATUS 1Hz 稳定接收 |
-| 参数读取 | PARAM_REQUEST_LIST 全表拉取正常（含 `_HASH_CHECK` idx=65535 项） |
-| 日志下载 | MAVLink FTP（251 字节 payload）目录浏览 + 文件下载正常 |
-| 备选链路 | ws_bridge.py WebSocket 桥双向透传正常（解决 Web Serial 直连触发飞控 USB 复位问题） |
-| 解析可靠性 | CRC-16/MCRF4XX 校验，错误帧静默丢弃并重同步，无丢流 |
+| Android `.apk` | 待验证 | QGC 官方支持 Qt 6 Android |
+| iOS `.ipa` | 待验证 | QGC 官方支持 Qt 6 iOS |
+| Web (WebAssembly) | 待验证 | Qt 5.15 + emcc 编译可行性需评估 |
 
 ---
 
@@ -702,7 +590,7 @@ D1. 一种地面站与飞控的通信方法，其特征在于，所述地面站�
 1. **权利要求书**（1 项独立权利要求 + 多项从属权利要求）
 2. **说明书**（含技术领域、背景技术、发明内容、具体实施方式、附图说明）
 3. **说明书摘要**（≤ 300 字）
-4. **说明书附图**（按 §五 列出的 11 张图绘制）
+4. **说明书附图**（按 §五 列出的 8 张图绘制）
 5. **IPC 分类**：建议归入
    - G05B 19/4155（程序控制系统）
    - G06F 8/61（代码转换、压缩、移植）
@@ -712,9 +600,7 @@ D1. 一种地面站与飞控的通信方法，其特征在于，所述地面站�
    - "无人机 + 参数切换 + 控制器"
    - "PX4 + yaml + 参数"
    - "QGroundControl + 跨平台 + 部署"
-   - "Web 地面站 + 跨平台"
-   - "Web Serial + MAVLink + 浏览器"
-   - "网页地面站 + 参数切换"
+   - "WebAssembly + 地面站"
 7. **发明人确认书**：所有发明人签字
 8. **申请人主体证明**：营业执照副本 / 法人证书
 
@@ -725,16 +611,14 @@ D1. 一种地面站与飞控的通信方法，其特征在于，所述地面站�
 ### 附件 1：源代码仓库链接
 
 - 地面站定制：https://github.com/ifsc-gmlab/IFSC_Station
-- 飞控固件：https://github.com/ifsc-gmlab/PX4-Autopilot（分支 ifsc-station-v1.0，基于 PX4 v1.17.0）
-- 网页端：`IFSC-web/`（IFSC-Station Web V1.0.5，纯 HTML/JS 静态站点）
+- 飞控固件：https://github.com/ifsc-gmlab/PX4-Autopilot
 - 提交记录：
   - `dacdc15e8 feat(parameter editor): expose IFSC Station / IFSC_DIST_SW parameter`
   - `52194761c5 feat(param_control): add IFSC-Station placeholder module with IFSC_DIST_SW`
 
 ### 附件 2：开发文档
 
-- `IFSC_Station_自定义参数开发文档.md`（PX4 + 地面站全流程开发文档，含 10 个踩坑记录）
-- `IFSC_Station_网页版开发手册.md`（网页端全流程开发文档，含 VFR_HUD 速度读取、PX4 v1.17 通信冻结防护、Web Serial device-lost 与 ws_bridge.py 桥接等关键问题与解决方案）
+- `IFSC_Station_自定义参数开发文档.md`（PX4 + QGC 全流程开发文档，含 10 个踩坑记录）
 
 ### 附件 3：用户手册
 
@@ -746,32 +630,20 @@ D1. 一种地面站与飞控的通信方法，其特征在于，所述地面站�
 
 ### 附件 4：实测截图
 
-- IFSC-Station Vehicle Setup → Parameters → IFSC Station / Disturbance Switch 截图
+- QGC Vehicle Setup → Parameters → IFSC Station / Disturbance Switch 截图
 - PX4 NSH console `param show IFSC_DIST_SW` 截图
 - 切换时双端 banner 输出截图
-- 网页版参数编辑器控制器切换条截图（PID / LQR(INDI) / MPC）
-- 网页版 Fly 视图与日志下载界面截图
 
 ### 附件 5：流程图
 
 - 端到端数据流图（按 §3.2(f) 绘制）
 - 参数切换时序图
-- 网页版总体架构图与 MAVLink FTP 下载流程图（按 §五 图 9 / 图 11 绘制）
-
-### 附件 6：关键源码文件
-
-- `ws_bridge.py`（WebSocket 桥，241 行，RFC 6455 标准库实现）
-- `src/mavlink.js`（纯 JS MAVLink 解析器，713 行）
-- `src/views/params.js`（参数编辑器 + IFSC_DIST_SW 控制器切换条，745 行）
 
 ---
 
 ## 十、声明
 
-本技术交底书由 IFSC-Station 项目组撰写，所描述的技术方案已在实验室环境下完成原型验证（占位实现）；跨平台 + Web 部分已产出实际构建产物并经实测（Windows NSIS 安装包、Linux AppImage、Web 版 V1.0.5），其中：
-
-- **网页端**（V1.0.5）已在 Pixhawk 6C Mini + PX4 v1.17.0 上实测通过：Web Serial 直连（115200 波特率）与 WebSocket 桥接（ws_bridge.py）双链路均可完成姿态/位置/GPS/速度（VFR_HUD）/参数全表/日志 FTP 拉取；参数编辑器包含 IFSC_DIST_SW 控制器切换条（PID / LQR(INDI) / MPC），与桌面端共用同一飞控参数通道。
-- **飞控端** `param_control` 模块为占位实现（已完成 IFSC_DIST_SW 参数声明、模块框架、边沿检测与 uORB 订阅），切换延迟 `< 200 ms` 为设计指标，待接入真实控制器模块（LQR(INDI) / MPC）后补充实测数据。
+本技术交底书由 IFSC-Station 项目组撰写，所描述的技术方案已在实验室环境下完成原型验证（占位实现），创新点中的"跨平台 + Web"部分待真实模块接入后补充实测数据。
 
 本交底书仅作为专利代理机构起草专利申请文件的内部素材，不构成正式的专利申请文件，亦不构成任何形式的技术公开承诺。
 
@@ -781,4 +653,4 @@ D1. 一种地面站与飞控的通信方法，其特征在于，所述地面站�
 
 **撰写人**：IFSC-Station 项目组
 **撰写日期**：2026-07-27
-**版本**：v1.1（2026-08-05 补全：网页版实施方式 §4.4、网页端 IFSC_DIST_SW 双端协同实现 §3.2(d)(e)、附图 9-11、实测指标 §7.2、附件 6；版本事实更新至 Web V1.0.5 / PX4 v1.17.0）
+**版本**：v1.0

@@ -1,13 +1,5 @@
 # IFSC-Station 定制与打包手册
 
-> ⚠️ **弃用说明（2026-07-22）**：本手册描述的是 **Ubuntu / Linux 下的 appimage 打包流程**，已**不再适用**当前的 Windows 定制。
->
-> 当前 IFSC-Station 项目请改用：
-> - **源码级定制 + Windows 打包**：[IFSC-Station_Windows定制与打包手册.md](IFSC-Station_Windows定制与打包手册.md)
-> - **用户使用**：[IFSC-Station_使用手册.md](IFSC-Station_使用手册.md)
->
-> 本文件**保留仅供历史参考**，包含 4.2.8 早期 Linux 定制阶段的改动记录。
-
 > 适用源码版本：**QGroundControl 4.2.8**（`GIT_DESCRIBE = v4.2.8`，基于 mavlink/qgroundcontrol@v4.2.8 tag）。
 > 适用构建系统：**qmake + Qt 5.15.x**（Linux release 构建）。
 > 项目根目录以下用 `.` 表示，所有相对路径均从仓库根目录出发。
@@ -30,7 +22,6 @@
 11. [关于 `custom-example/` 的取舍说明](#11-关于-custom-example-目录的取舍说明)
 12. [整套改动文件清单](#12-整套改动文件清单)
 13. [复现检查清单](#13-复现检查清单)
-14. [工程文件改名（去 qgroundcontrol 化：`qgroundcontrol.pro` → `IFSC-Station.pro`）](#14-工程文件改名去-qgroundcontrol-化qgroundcontrolpro--ifsc-stationpro)
 
 ---
 
@@ -158,16 +149,11 @@ sender()->deleteLater();
 
 | 引用点 | 资源路径 | 源文件 | 显示位置 |
 |---|---|---|---|
-| `src/ui/toolbar/MainToolBar.qml:70` | `/res/IFSC-StationLogoFull` | `resources/IFSC-StationLogoFull.svg` | 主工具栏左上角 logo |
-| `src/ui/MainRootWindow.qml:402`（工具栏 Application Settings 按钮） | `/res/IFSC-StationLogoFull` | `resources/IFSC-StationLogoFull.svg` | 工具栏右下角 Application Settings 按钮图标 |
-| `src/ui/MainRootWindow.qml`（AppSettings 顶栏） | `/res/QGCLogoWhite` | `resources/QGCLogoWhite.svg` | AppSettings 顶部小标题栏 logo |
-| `src/FlightMap/FlightMap.qml:129`（无 GCS 朝向） | `/res/IFSC-StationLogoFull` | `resources/IFSC-StationLogoFull.svg` | 飞行地图中心 GCS 标识（gcsHeading 为 NaN） |
-| `src/FlightMap/FlightMap.qml:129`（有 GCS 朝向） | `/res/IFSC-StationLogoArrow` | `resources/IFSC-StationLogoArrow.svg` | 飞行地图中心 GCS 朝向箭头（gcsHeading 有效时旋转） |
-| `src/AutoPilotPlugins/APM/APMFollowComponent.qml:353` | `/res/IFSC-StationLogoArrow` | `resources/IFSC-StationLogoArrow.svg` | APM 跟随模式下的 GCS 标识 |
+| `src/ui/toolbar/MainToolBar.qml:70` | `/res/QGCLogoFull` | `resources/QGCLogoFull.svg` | 主工具栏左上角 logo |
+| `src/ui/MainRootWindow.qml`（AppSettings） | `/res/QGCLogoWhite` | `resources/QGCLogoWhite.svg` | AppSettings 顶部小标题栏 logo |
+| `src/FlightMap/FlightMap.qml:129` | `/res/QGCLogoFull` / `QGCLogoArrow` | `resources/QGCLogoFull.svg` | 飞行地图中心朝向图标 |
 
-> 五个资源别名都在 `qgcresources.qrc` 中以 alias 注册（详见第 12 节）。`IFSC-StationLogoArrow` 是 2026-07-22 由原 `QGCLogoArrow` 改名而来：保留原 4 顶点凹四边形箭头外形（顶 (36,2) / 右下 (71,71) / 中凹 (36,54) / 左下 (1,71)），去掉内部的 Q 字母 (`path6-4` + `path8`/`path10`/`path12-3` + `rect4` 白色圆角背景) 和两翼白色三角形 (`path3789`/`path3791`)，所有紫色 fill 统一改为 `#00427F` 实心，viewBox 保持 `0 0 72 72` 不变以保证尺寸兼容；`IFSC-StationLogoFull` 此前已存在（`QGCLogoFull` 改名）。
->
-> **重命名规则**：重命名 SVG → 同步改 `qgcresources.qrc` 的 alias + file 路径 → 全局搜旧名替换引用点（推荐用 `grep -r "QGCLogoArrow" src/` 验证无残留）。
+> 三个 logo 都在同一个 `qgcresources.qrc` 中以 alias 注册（详见第 12 节），直接替换源 `.svg` 即可。
 
 ### 5.1 替换源 SVG
 
@@ -188,11 +174,11 @@ cd build_v428
 
 # 触发 qrc 重新生成
 touch qgcresources.qrc
-touch IFSC-Station.qrc
+touch qgroundcontrol.qrc
 
 # 删除已编译的 qrc 对象
 rm -f qrc_qgcresources.o
-rm -f qrc_IFSC-Station.o
+rm -f qrc_qgroundcontrol.o
 ```
 
 ### 5.3 重新编译
@@ -206,7 +192,7 @@ make -j$(nproc)
 ```bash
 python3 -c "
 data = open('staging/IFSC-Station','rb').read() if __import__('os').path.exists('staging/IFSC-Station') else open('staging/QGroundControl','rb').read()
-for f in ['../resources/QGCLogoWhite.svg','../resources/IFSC-StationLogoFull.svg','../resources/QGCLogoBlack.svg']:
+for f in ['../resources/QGCLogoWhite.svg','../resources/QGCLogoFull.svg','../resources/QGCLogoBlack.svg']:
     print(f, '->', 'OK' if open(f,'rb').read() in data else 'MISSING')
 "
 ```
@@ -410,7 +396,7 @@ Categories=Utility;
 
 ```bash
 cd .
-qmake IFSC-Station.pro -spec linux-g++ CONFIG+=release
+qmake qgroundcontrol.pro -spec linux-g++ CONFIG+=release
 make -j$(nproc) release
 ```
 
@@ -463,7 +449,7 @@ diff -u deploy/create_linux_appimage.sh deploy/create_IFSC-Station_appimage.sh |
 
 ## 10. 复现过程中遇到的问题与解决办法（重要）
 
-> 本节是**原手册未记录、但实际复现时一定会遇到**的 9 个问题，按发现顺序整理。
+> 本节是**原手册未记录、但实际复现时一定会遇到**的 8 个问题，按发现顺序整理。
 
 ### #1 副 PNG 巨大（4262x4262 → 128x128）
 
@@ -487,7 +473,8 @@ img.save('resources/icons/IFSC-Station.png')
 
 ### #2 替换 SVG logo 后 make 不会重编 qrc
 
-**现象**：替换 `resources/IFSC-StationLogoFull.svg` 等 SVG 后跑 `make -j4`，工具栏 logo 还是旧的。
+**现象**：替换 `resources/QGCLogoFull.svg` 等 SVG 后跑 `make -j4`，工具栏 logo 还是旧的。
+
 **根因**：qmake 生成的 Makefile 规则把 `qrc_qgcresources.o` 的依赖项写为 `qgcresources.qrc`，**不监听被引用文件（SVG/PNG）** 的 mtime 变化。所以即使 SVG 变了，make 也不会重编 qrc_*.o。
 
 **解决**：手动强制触发重编：
@@ -604,43 +591,15 @@ QGCLabel {
 }
 ```
 
-### #9 工程文件改名后增量编译报 `undefined reference to qInitResources_qgroundcontrol_qmlcache`
-
-**现象**：把工程文件 `qgroundcontrol.pro` / `qgroundcontrol.qrc` 改名为 `IFSC-Station.pro` / `IFSC-Station.qrc` 后，Qt Creator 增量编译到链接阶段报错：
-
-```
-/usr/bin/ld: /tmp/IFSC-Station.qJFHrj.ltrans0.ltrans.o: in function `_sub_I_65535_0.498022':
-<artificial>:(.text.startup+0x1f0): undefined reference to `qInitResources_qgroundcontrol_qmlcache()'
-collect2: error: ld returned 1 exit status
-```
-
-**根因**（两层叠加）：
-1. **`mv` 改名会保留源文件原 mtime**。`IFSC-Station.qrc` 的时间戳仍是改名前的旧值（早于构建目录里旧的 `qmlcache_loader.cpp`），增量 `make` 据此认为 qrc 未变化，**不会重新生成 qmlcache loader**。
-2. 构建目录里残留着旧 qrc 名生成的 qmlcache 产物（`qmlcache_loader.cpp/.o`、`qrc_qgroundcontrol_qmlcache.cpp/.o`、`qgroundcontrol_qmlcache.qrc`）。旧 `qmlcache_loader.o` 仍调用 `qInitResources_qgroundcontrol_qmlcache()`，而改名后 qmake 重新生成的 Makefile 已不再编译/链接定义该函数的 `qrc_qgroundcontrol_qmlcache.o` → 符号未定义。
-
-**解决**：删除构建目录里所有旧 qrc 名的 qmlcache 残留产物，让 make 强制重新生成 loader：
-
-```bash
-cd <build 目录>   # 例如 build-qgroundcontrol-Desktop-Release
-rm -f qmlcache_loader.cpp qmlcache_loader.o
-rm -f qrc_qgroundcontrol_qmlcache.cpp qrc_qgroundcontrol_qmlcache.o
-rm -f qgroundcontrol_qmlcache.qrc
-make -j$(nproc)
-```
-
-qmake 会以新 qrc 名（`IFSC-Station.qrc`）重新调用 `qmlcachegen` 生成 `qmlcache_loader.cpp`（初始化函数变为 `qInitResources_IFSC_Station` / `qInitResources_IFSC_Station_qmlcache` 等新名），链接通过。
-
-**后续注意事项**：`mv` 改名后若再遇到"改了源码但 make 不重编"类问题，优先怀疑 mtime——用 `stat -c '%y 文件'` 检查，必要时 `touch` 改名文件更新时间戳。
-
 ---
 
 ## 11. 关于 `custom-example/` 目录的取舍
 
-QGC 4.2.8 官方 `custom-example/` 是一套独立 CustomPlugin 的示例（自定义 `QGCCorePlugin` 子类 + `paletteOverride()` 重写整套调色板 + `IFSC-Station.qrc` 整体替换）。完整二开流程需要：
+QGC 4.2.8 官方 `custom-example/` 是一套独立 CustomPlugin 的示例（自定义 `QGCCorePlugin` 子类 + `paletteOverride()` 重写整套调色板 + `qgroundcontrol.qrc` 整体替换）。完整二开流程需要：
 
 - 在仓库根建立 `custom/` 目录（重命名 `custom-example/`）；
 - 编写 `CustomPlugin.cc` / `CustomPlugin.h`，其 `paletteOverride()` 覆盖每个颜色键 4 个状态值；
-- `IFSC-Station.pro` 中通过 `CustomBuild` 开关自动加载 `custom/*.qrc`，最终编出 `CustomQGroundControl` 二进制。
+- `qgroundcontrol.pro` 中通过 `CustomBuild` 开关自动加载 `custom/*.qrc`，最终编出 `CustomQGroundControl` 二进制。
 
 **我们的 IFSC-Station 不走这条路**，理由：
 
@@ -663,7 +622,7 @@ QGC 4.2.8 官方 `custom-example/` 是一套独立 CustomPlugin 的示例（自�
 | `src/ui/preferences/GeneralSettings.qml` | 修改 | App Settings 面板版本号改为 `IFSC Station` + `V1.0` 居中 |
 | `src/FlightDisplay/FlyViewWidgetLayer.qml` | 修改 | 飞行视图右上角两个 Image：永久显示，与仪表盘等高、对齐右侧 |
 | `qgcresources.qrc` | 修改 | 注册 `LOGO.png` / `IFSC_logo.png` / `IFSC-Station.png` / `IFSC-Station.ico` |
-| `resources/IFSC-StationLogoFull.svg` | 修改 | 工具栏左上角 / 飞行地图朝向 logo |
+| `resources/QGCLogoFull.svg` | 修改 | 工具栏左上角 / 飞行地图朝向 logo |
 | `resources/QGCLogoWhite.svg` | 修改 | AppSettings 顶栏 logo |
 | `resources/QGCLogoBlack.svg` | 修改 | 备用 logo |
 | `deploy/IFSC-Station-start.sh` | 新增 | AppRun：与 QGC 原版同构 |
@@ -674,9 +633,6 @@ QGC 4.2.8 官方 `custom-example/` 是一套独立 CustomPlugin 的示例（自�
 | `resources/icons/IFSC-Station-4262x4262.png` | 新增（备份） | 大图备份，**不要打包进 AppImage** |
 | `resources/icons/IFSC-Station.ico` | 新增 | Windows 风格多尺寸 ICO（10 个尺寸 16-256），嵌入 qrc 用于 _NET_WM_ICON |
 | `resources/icons/sizes/` | 新增 | 多尺寸 PNG 备份目录（16/22/24/32/48/64/96/128/256/512），**不打包** |
-| `qgroundcontrol.pro` → `IFSC-Station.pro` | 改名 | 工程文件（`TARGET = IFSC-Station`）；shadow-build 检查、RESOURCES 引用同步（见第 14 节） |
-| `qgroundcontrol.qrc` → `IFSC-Station.qrc` | 改名 | 主资源文件（`.pro`/CMake 引用同步） |
-| `qgroundcontrol.pro.user` → `IFSC-Station.pro.user` | 改名 | Qt Creator 项目配置（保留原 build 目录引用） |
 
 ---
 
@@ -689,7 +645,7 @@ QGC 4.2.8 官方 `custom-example/` 是一套独立 CustomPlugin 的示例（自�
 - [ ] 3. 修改 `src/main.cc` 的 `setWindowIcon` 路径为 `IFSC-Station.ico`
 - [ ] 4. 修改 `src/ui/MainRootWindow.qml` 版本号两行 label（含 `Layout.fillWidth` + `horizontalAlignment`）
 - [ ] 5. 修改 `src/ui/preferences/GeneralSettings.qml` 版本号两行 label（同样 3 行居中）
-- [ ] 6. 替换 `resources/IFSC-StationLogoFull.svg` / `QGCLogoWhite.svg` / `QGCLogoBlack.svg`
+- [ ] 6. 替换 `resources/QGCLogoFull.svg` / `QGCLogoWhite.svg` / `QGCLogoBlack.svg`
 - [ ] 7. 拷贝 `LOGO.png` 与 `IFSC_logo.png` 到 `resources/`，并在 `qgcresources.qrc` 的 `/res` 块**内部**注册
 - [ ] 8. 修改 `FlyViewWidgetLayer.qml` 插入 `Row { ... }` 永久显示两个 LOGO，source 必须是 `qrc:/res/...`
 - [ ] 9. 修改 `QGCPalette.cc` 的 `brandingPurple` 为 `#00427F`
@@ -699,43 +655,6 @@ QGC 4.2.8 官方 `custom-example/` 是一套独立 CustomPlugin 的示例（自�
 - [ ] 13. 用 `deploy/create_IFSC-Station_appimage.sh` 重打 AppImage，确认输出目录里有 `IFSC-Station.AppImage`
 - [ ] 14. 解包验证：`./IFSC-Station.AppImage --appimage-extract && file squashfs-root/IFSC-Station.png` 应为 128x128
 - [ ] 15. 在另一台 **Ubuntu 24.04** 干净机器上双击 `IFSC-Station.AppImage`：窗口标题应为 `IFSC Station`，任务栏图标应为 `IFSC-Station`，主界面右上角两个 LOGO 均应显示，整条工具栏主题色为深蓝，文件管理器中 AppImage 的图标为 IFSC
-- [ ] 16. （2026-08-05 工程文件改名后）确认 `qgroundcontrol.pro` / `qgroundcontrol.qrc` / `qgroundcontrol.pro.user` 已改名 `IFSC-Station.*`；构建目录无 `qrc_qgroundcontrol*` / `qmlcache_loader.*` 残留（见第 10 节 #9）；`make` 链接通过、`staging/IFSC-Station` 正常产出
-
----
-
-## 14. 工程文件改名（去 qgroundcontrol 化：`qgroundcontrol.pro` → `IFSC-Station.pro`）
-
-> 2026-08-05 完成。目的：把工程级文件的命名统一到 `IFSC-Station`，与桌面端二进制（`.pro` 中 `TARGET = IFSC-Station`）及 AppImage 产物一致，避免对外沟通时被误读为"QGroundControl 套壳"。
-
-### 14.1 改名清单
-
-| 原文件名 | 新文件名 | 说明 |
-|---|---|---|
-| `qgroundcontrol.pro` | `IFSC-Station.pro` | 工程文件（qmake 入口）；`TARGET = IFSC-Station` 原本已是新名 |
-| `qgroundcontrol.qrc` | `IFSC-Station.qrc` | 主资源文件 |
-| `qgroundcontrol.pro.user` | `IFSC-Station.pro.user` | Qt Creator 项目配置（改名后保持原 build 目录引用，避免全量重编） |
-
-### 14.2 同步更新的引用
-
-- **`IFSC-Station.pro` 内部**：shadow-build 检查（`exists($${OUT_PWD}/IFSC-Station.pro)`）、错误消息、RESOURCES 两处 `$$PWD/IFSC-Station.qrc`（含 `CustomBuild` 分支的 `custom/IFSC-Station.qrc`）
-- **构建脚本**：`build/linux/build_IFSC-Station.sh` / `build/linux/.build_IFSC-Station.sh` 的 `qmake ${SRC_DIR}/IFSC-Station.pro` 及注释；`/home/lu/Share/create_IFSC-Station_appimage.sh` 与 `deploy/create_linux_appimage.sh` 的源码目录 `.pro` 存在性检查
-- **CMake**：`CMakeLists.txt` 中 `IFSC-Station.qrc` 路径（CMake 为备选构建路径，仅同步 qrc 引用）
-- **CI**：`.github/workflows/*.yml`（6 个）、`.travis.yml`、`backup-Jenkinsfile`、`build_ios.sh`、`android_environment.sh`、`.vagrantconfig.yml`
-- **其它**：`QGCExternalLibs.pri`（注释）、`custom-example/updateqrc.py`、`src/VideoReceiver/README.md`
-- **文档**：本手册、`IFSC-Station_使用手册.md`、`IFSC-Station_Windows定制与打包手册.md`、`IFSC-Station_Ubuntu构建与打包手册.md` 中的 `qgroundcontrol.pro` / `qgroundcontrol.qrc` / `qrc_qgroundcontrol.o` 引用
-
-### 14.3 构建验证
-
-1. 改名后先用 Qt 5.15.2 在临时 shadow 目录验证工程文件可解析：`qmake /path/to/IFSC-Station.pro`（应 EXIT 0 并生成 Makefile，无"找不到 qgroundcontrol.qrc"类错误）
-2. 再在既有 build 目录增量编译 + 链接，确认 `staging/IFSC-Station` 正常产出
-3. 增量编译踩到的 `undefined reference to qInitResources_qgroundcontrol_qmlcache` 链接问题与解决见**第 10 节 #9**
-
-### 14.4 未改动的部分（有意保留）
-
-- 源码根**目录名**仍是 `qgroundcontrol`（如 `/home/lu/Share/qgroundcontrol`、Qt Creator 的 `build-qgroundcontrol-Desktop-Release`）——目录是源码/构建目录路径，专利与手册均按此引用，不随工程文件改名
-- `qgcresources.qrc` / `qgcimages.qrc` 等 qrc 文件名（QGC 内部资源名，`.pro`/CMake 广泛引用，与产品身份无关）
-- `QGCPostLinkCommon.pri` 的 post-link 仍复制 `deploy/qgroundcontrol-start.sh` / `qgroundcontrol.desktop` / `qgroundcontrol.png` 到 staging（这些文件仍在树内、不影响 AppImage 打包；如需统一可另行处理）
-- 各上游 CI 中与构建产物名/镜像相关的其余 QGC 字样（仅同步了 `.pro` 路径引用）
 
 ---
 
@@ -748,7 +667,7 @@ QGC 4.2.8 官方 `custom-example/` 是一套独立 CustomPlugin 的示例（自�
 cd build_v428
 python3 -c "
 data = open('staging/IFSC-Station','rb').read() if __import__('os').path.exists('staging/IFSC-Station') else open('staging/QGroundControl','rb').read()
-for f in ['../resources/QGCLogoWhite.svg','../resources/IFSC-StationLogoFull.svg','../resources/LOGO.png','../resources/IFSC_logo.png']:
+for f in ['../resources/QGCLogoWhite.svg','../resources/QGCLogoFull.svg','../resources/LOGO.png','../resources/IFSC_logo.png']:
     print(f, '->', ('OK' if open(f,'rb').read() in data else 'MISSING'))
 "
 
