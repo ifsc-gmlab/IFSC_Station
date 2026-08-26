@@ -1,0 +1,15 @@
+menuconfig MODULES_PARAM_CONTROL
+	bool "param_control (IFSC-Station placeholder)"
+	default n
+	---help---
+		Enable the param_control module, which is currently being used as the
+		IFSC-Station placeholder. It exposes the IFSC_DIST_SW parameter to
+		QGroundControl and prints a banner when the user toggles between
+		PID Control (0) and Param Control (1).
+
+menuconfig USER_PARAM_CONTROL
+	bool "param_control running as userspace module"
+	default n
+	depends on BOARD_PROTECTED && MODULES_PARAM_CONTROL
+	---help---
+		Put param_control in userspace memory

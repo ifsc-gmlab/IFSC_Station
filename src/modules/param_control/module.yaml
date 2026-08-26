@@ -1,0 +1,158 @@
+module_name: IFSC-Station placeholder
+
+parameters:
+    - group: IFSC Station
+      definitions:
+
+        IFSC_DIST_SW:
+            description:
+                short: Disturbance Switch
+                long: |
+                    Select which controller handles wind / disturbance rejection
+                    for IFSC-Station.
+
+                    0: PID Control (default). The built-in PID controller is used.
+                    1: LQR Control. The Linear Quadratic Regulator controller.
+                    2: INDI Control. The Incremental Nonlinear Dynamic Inversion
+                       controller.
+                    3: MPC Control. The Model Predictive Control controller.
+            type: enum
+            values:
+                0: PID Control
+                1: LQR Control
+                2: INDI Control
+                3: MPC Control
+            default: 0
+            category: Standard
+
+        IFSC_LQR_PARAM1:
+            description:
+                short: LQR parameter 1
+                long: |
+                    Placeholder tuning parameter 1 for the LQR controller.
+                    The real parameter name and range will be defined once the
+                    LQR controller gains are finalized.
+            type: float
+            min: 0.0
+            max: 10.0
+            decimal: 3
+            increment: 0.1
+            default: 0.0
+            category: Standard
+
+        IFSC_LQR_PARAM2:
+            description:
+                short: LQR parameter 2
+                long: |
+                    Placeholder tuning parameter 2 for the LQR controller.
+            type: float
+            min: 0.0
+            max: 10.0
+            decimal: 3
+            increment: 0.1
+            default: 0.0
+            category: Standard
+
+        IFSC_LQR_PARAM3:
+            description:
+                short: LQR parameter 3
+                long: |
+                    Placeholder tuning parameter 3 for the LQR controller.
+            type: float
+            min: 0.0
+            max: 10.0
+            decimal: 3
+            increment: 0.1
+            default: 0.0
+            category: Standard
+
+        IFSC_LQR_PARAM4:
+            description:
+                short: LQR parameter 4
+                long: |
+                    Placeholder tuning parameter 4 for the LQR controller.
+            type: float
+            min: 0.0
+            max: 10.0
+            decimal: 3
+            increment: 0.1
+            default: 0.0
+            category: Standard
+
+        IFSC_LQR_PARAM5:
+            description:
+                short: LQR parameter 5
+                long: |
+                    Placeholder tuning parameter 5 for the LQR controller.
+            type: float
+            min: 0.0
+            max: 10.0
+            decimal: 3
+            increment: 0.1
+            default: 0.0
+            category: Standard
+
+        IFSC_INDI_PARAM1:
+            description:
+                short: INDI parameter 1
+                long: |
+                    Placeholder tuning parameter 1 for the INDI controller.
+            type: float
+            min: 0.0
+            max: 10.0
+            decimal: 3
+            increment: 0.1
+            default: 0.0
+            category: Standard
+
+        IFSC_INDI_PARAM2:
+            description:
+                short: INDI parameter 2
+                long: |
+                    Placeholder tuning parameter 2 for the INDI controller.
+            type: float
+            min: 0.0
+            max: 10.0
+            decimal: 3
+            increment: 0.1
+            default: 0.0
+            category: Standard
+
+        IFSC_INDI_PARAM3:
+            description:
+                short: INDI parameter 3
+                long: |
+                    Placeholder tuning parameter 3 for the INDI controller.
+            type: float
+            min: 0.0
+            max: 10.0
+            decimal: 3
+            increment: 0.1
+            default: 0.0
+            category: Standard
+
+        IFSC_INDI_PARAM4:
+            description:
+                short: INDI parameter 4
+                long: |
+                    Placeholder tuning parameter 4 for the INDI controller.
+            type: float
+            min: 0.0
+            max: 10.0
+            decimal: 3
+            increment: 0.1
+            default: 0.0
+            category: Standard
+
+        IFSC_INDI_PARAM5:
+            description:
+                short: INDI parameter 5
+                long: |
+                    Placeholder tuning parameter 5 for the INDI controller.
+            type: float
+            min: 0.0
+            max: 10.0
+            decimal: 3
+            increment: 0.1
+            default: 0.0
+            category: Standard
